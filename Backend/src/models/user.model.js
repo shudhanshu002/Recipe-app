@@ -40,13 +40,26 @@ const userSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    otp: {
+      type: String,
+    },
+    otpExpiry: {
+      type: Date,
+    },
     avatar: {
       type: String,
       default: 'https://cdn-icons-png.flaticon.com/512/149/149071.png', // Default user icon
     },
     refreshToken: {
-        type: String,
-    }
+      type: String,
+    },
+    accessToken: {
+      type: String,
+    },
   },
   { timestamps: true },
 );
