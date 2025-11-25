@@ -54,6 +54,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: 'https://cdn-icons-png.flaticon.com/512/149/149071.png', // Default user icon
     },
+    role: {
+        type: String,
+        enum: ["user", "admin"],
+        default: "user"
+    },
     refreshToken: {
       type: String,
     },
