@@ -21,6 +21,28 @@ const generateAccessAndRefreshTokens = async (userId) => {
     }
 };
 
+const handleSocialLogin = asyncHandler(async(req, res)=> {
+    const user = req.user;
+
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.accessToken = accessToken;
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+
+    const options = {
+        httpOnly: true,
+        secure: true, 
+    };
+
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .redirect("http://localhost:5173");
+})
+
 const registerUser = asyncHandler(async (req,res)=> {
     const {email, username, password} = req.body;
 
@@ -77,6 +99,10 @@ const verifyUserOtp = asyncHandler(async (req,res) => {
     if(!email || !otp){
         throw new ApiError(400, "Email and OTP are required");
     }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    console.log(`Verifying OTP for: ${normalizedEmail} with code: ${otp}`);
 
     const user = await User.findOne({email});
 
@@ -190,5 +216,6 @@ export {
     registerUser,
     loginUser,
     verifyUserOtp,
-    logoutUser
+    logoutUser,
+    handleSocialLogin
 }
