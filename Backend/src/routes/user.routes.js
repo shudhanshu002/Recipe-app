@@ -1,6 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
-import { loginUser, logoutUser, registerUser, verifyUserOtp, handleSocialLogin } from "../controllers/user.controller.js";
+import { loginUser, logoutUser, registerUser, verifyUserOtp, handleSocialLogin, refreshAccessToken } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
@@ -8,6 +8,7 @@ const router = Router();
 router.route("/register").post(registerUser);
 router.route("/verify-otp").post(verifyUserOtp);
 router.route("/login").post(loginUser);
+router.route('/refresh-token').post(refreshAccessToken);
 
 //secure route
 router.route("/logout").post(verifyJWT, logoutUser);
