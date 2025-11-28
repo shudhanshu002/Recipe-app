@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Bookmark, Clock, Star, User } from 'lucide-react';
+import PropTypes from 'prop-types';
+import { Heart, Bookmark, Clock, Star } from 'lucide-react';
 import { socialApi } from '../api/social';
 import useAuthStore from '../store/useAuthStore';
 import useThemeStore from '../store/useThemeStore';
 
-const RecipeCard = ({ recipe }) => {
+const RecipeCard = ({ recipe, onClick, isActive }) => {
     const { user } = useAuthStore();
     const { isDarkMode } = useThemeStore();
     const [isLiked, setIsLiked] = useState(false);
     const [isBookmarked, setIsBookmarked] = useState(false);
 
     
-    const imageSrc = recipe.images?.length > 0 ? recipe.images[0] : 'https://placehold.co/600x400/orange/white?text=YumRecipe';
+    const imageSrc = recipe.images?.length > 0 ? recipe.images[0] : 'https://placehold.co/600x400/orange/white?text=YumTummy';
 
     const toggleLike = async (e) => {
         e.preventDefault();
+        e.stopPropagation();
         if (!user) return alert('Login to like');
         setIsLiked(!isLiked);
         try {
@@ -27,6 +29,7 @@ const RecipeCard = ({ recipe }) => {
 
     const toggleBookmark = async (e) => {
         e.preventDefault();
+        e.stopPropagation();
         if (!user) return alert('Login to bookmark');
         setIsBookmarked(!isBookmarked);
         try {
@@ -39,9 +42,12 @@ const RecipeCard = ({ recipe }) => {
     const cardBg = isDarkMode ? 'bg-[#1e1e1e] border-gray-800' : 'bg-white border-gray-100';
     const textColor = isDarkMode ? 'text-white' : 'text-gray-900';
     const subText = isDarkMode ? 'text-gray-400' : 'text-gray-500';
+    const activeClass = isActive ? `ring-2 ring-primary ring-offset-2 ${isDarkMode ? 'ring-offset-[#121212]' : 'ring-offset-white'}` : '';
+    const Wrapper = onClick ? 'div' : Link;
+    const wrapperProps = onClick ? { onClick: () => onClick(recipe._id) } : { to: `/recipes/${recipe._id}` };
 
     return (
-        <Link to={`/recipes/${recipe._id}`} className={`group block rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all border ${cardBg}`}>
+        <Wrapper {...wrapperProps} className={`group block rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all border cursor-pointer ${cardBg} ${activeClass}`}>
             <div className="relative aspect-[4/3] overflow-hidden bg-gray-200">
                 <img
                     src={imageSrc}
@@ -52,7 +58,6 @@ const RecipeCard = ({ recipe }) => {
 
                 <div className="absolute top-3 left-3 flex gap-2">
                     {recipe.isPremium && <span className="px-2 py-1 bg-yellow-500 text-white text-xs font-bold uppercase rounded shadow-sm">Premium</span>}
-                    <span className="px-2 py-1 bg-white/90 dark:bg-black/70 backdrop-blur-sm text-xs font-bold uppercase rounded shadow-sm text-gray-700 dark:text-gray-200">{recipe.cuisine}</span>
                 </div>
 
                 <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -76,8 +81,14 @@ const RecipeCard = ({ recipe }) => {
                     </div>
                 </div>
             </div>
-        </Link>
+        </Wrapper>
     );
+};
+
+RecipeCard.propTypes = {
+    recipe: PropTypes.object.isRequired,
+    onClick: PropTypes.func,
+    isActive: PropTypes.bool,
 };
 
 export default RecipeCard;
