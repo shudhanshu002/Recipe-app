@@ -104,58 +104,62 @@ const getRecipeById = asyncHandler(async (req, res) => {
 
 
 const getAllRecipes = asyncHandler(async (req, res) => {
-  const {
-    search,
-    cuisine,
-    mainIngredient, // Sort by "Chicken", "Paneer", etc.
-    sort,
-    page = 1,
-    limit = 10,
-  } = req.query;
-
-  const query = {};
-
-  if (search) query.title = { $regex: search, $options: 'i' };
-  if (cuisine) query.cuisine = cuisine;
-
+  try {
+    const {
+      search,
+      cuisine,
+      mainIngredient, // Sort by "Chicken", "Paneer", etc.
+      sort,
+    } = req.query;
   
-  if (mainIngredient) {
-    query.mainIngredient = { $regex: mainIngredient, $options: 'i' };
-  }
-
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
   
-  let sortOptions = { createdAt: -1 };
-
-  if (sort === 'name_asc') {
-    sortOptions = { title: 1 };
-  } else if (sort === 'name_desc') {
-    sortOptions = { title: -1 };
-  } else if (sort === 'oldest') {
-    sortOptions = { createdAt: 1 };
+    const query = {};
+  
+    if (search) query.title = { $regex: search, $options: 'i' };
+    if (cuisine && cuisine !== 'All') query.cuisine = cuisine;
+  
+    
+    if (mainIngredient) {
+      query.mainIngredient = { $regex: mainIngredient, $options: 'i' };
+    }
+  
+    
+    let sortOptions = { createdAt: -1 };
+  
+    if (sort === 'name_asc') {
+      sortOptions = { title: 1 };
+    } else if (sort === 'name_desc') {
+      sortOptions = { title: -1 };
+    } else if (sort === 'oldest') {
+      sortOptions = { createdAt: 1 };
+    }
+  
+    console.log('Fetching recipes with query:', JSON.stringify(query));
+  
+    const recipes = await Recipe.find(query)
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(limit)
+        .select('-instructions -videoUrl') // Optimize: Don't send heavy data
+        .populate('createdBy', 'username avatar'); // Get Author details
+  
+    const total = await Recipe.countDocuments(query);
+  
+    return res.status(200).json(
+      new ApiResponse(200, {
+        recipes,
+        currentPage: page,
+        totalPages: Math.ceil(total/limit),
+        totalRecipes: total
+      }, "Recipes fetched successfully")
+    );
+  } catch (error) {
+    console.error('ERROR IN GET ALL RECIPES:', error);
+    throw new ApiError(500, 'Server Error while fetching recipes');
   }
-
-  const options = {
-    page: parseInt(page, 10),
-    limit: parseInt(limit, 10),
-  };
-  const skip = (options.page - 1) * options.limit;
-
-  const recipes = await Recipe.find(query)
-                              .sort(sortOptions)
-                              .skip(skip)
-                              .limit(options.limit)
-                              .select('-instructions -videoUrl'); 
-
-  const total = await Recipe.countDocuments(query);
-
-  return res.status(200).json(
-    new ApiResponse(200, {
-      recipes,
-      currentPage: options.page,
-      totalPages: MAth.ceil(total/options.limit),
-      totalRecipes: total
-    }, "Recipes fetched successfully")
-  );
 });
 
 
