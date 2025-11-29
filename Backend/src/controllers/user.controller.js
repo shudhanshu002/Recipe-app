@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import jwt from "jsonwebtoken";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -260,11 +261,63 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 });
 
+
+const updateUserAvatar = asyncHandler(async (req,res)=> {
+    const avatarLocalPath = req.file?.path;
+
+    if(!avatarLocalPath) {
+        throw new ApiError(400, "Avatar file is missing");
+    }
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+    if(!avatar.url) {
+        throw new ApiError(500, "Error uploading avatar");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: {avatar: avatar.url}
+        },
+        {new: true}
+    ).select("-password");
+
+    return res.status(200).json(
+        new ApiResponse(200, user, "Avatar updated successfully")
+    );
+});
+
+const updateAccountDetails = asyncHandler(async (req, res)=> {
+    const {about, title} = req.body;
+
+    if(!about && !title) {
+        throw new ApiError(400, "At least one field is required");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: {
+                about: about || undefined,
+                title: title || undefined
+            }
+        },
+        {new: true}
+    ).select("-password");
+
+    return res.status(200).json(
+        new ApiResponse(200, user, "Account details updated successfully")
+    );
+});
+
 export {
     registerUser,
     loginUser,
     verifyUserOtp,
     logoutUser,
     handleSocialLogin,
-    refreshAccessToken
+    refreshAccessToken,
+    updateUserAvatar,
+    updateAccountDetails
 }
