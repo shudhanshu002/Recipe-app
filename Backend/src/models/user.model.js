@@ -73,6 +73,10 @@ const userSchema = new mongoose.Schema(
         accessToken: {
             type: String,
         },
+        about: { type: String, trim: true, maxLength: 500 },
+        isSubscriptionActive: { type: Boolean, default: false },
+        subscriptionExpiry: { type: Date },
+        isFollowingPublic: { type: Boolean, default: true },
     },
     { timestamps: true },
 );

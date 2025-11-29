@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, User, Star, Lock, X, Maximize2 } from 'lucide-react';
+import { Clock, Star, Lock, X, Maximize2 } from 'lucide-react';
 import { recipeApi } from '../api/recipes';
 import useThemeStore from '../store/useThemeStore';
 
@@ -20,7 +20,7 @@ const RecipeDetailPanel = ({ recipeId, onClose }) => {
                 const data = await recipeApi.getOne(recipeId);
                 setRecipe(data);
             } catch (err) {
-                if (err.statusCode === 403) {
+                if (err.response?.status === 403) {
                     setRecipe(err.response?.data?.data);
                     setIsLocked(true);
                 }
@@ -41,6 +41,7 @@ const RecipeDetailPanel = ({ recipeId, onClose }) => {
 
     return (
         <div className={`h-full flex flex-col ${panelBg}`}>
+            {/* Toolbar */}
             <div className={`flex items-center justify-between p-4 border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                 <div className="flex gap-2">
                     <button onClick={onClose} className={`p-2 rounded-lg transition-colors ${iconHover} ${subText}`} title="Close">
@@ -59,7 +60,6 @@ const RecipeDetailPanel = ({ recipeId, onClose }) => {
                     <div className={`text-center py-20 ${subText}`}>Loading details...</div>
                 ) : recipe ? (
                     <div className="space-y-6">
-                        {/* Image */}
                         <div className="aspect-video w-full rounded-xl overflow-hidden relative bg-gray-200">
                             <img src={recipe.images?.[0]} alt={recipe.title} className="w-full h-full object-cover" />
                             {isLocked && (
@@ -73,6 +73,13 @@ const RecipeDetailPanel = ({ recipeId, onClose }) => {
 
                         <div>
                             <h2 className={`text-2xl font-bold leading-tight ${textColor}`}>{recipe.title}</h2>
+
+
+                            <Link to={`/profile/${recipe.createdBy?.username}`} className="inline-flex items-center gap-2 mt-2 hover:opacity-80 transition-opacity group">
+                                <img src={recipe.createdBy?.avatar || 'https://via.placeholder.com/30'} className="w-6 h-6 rounded-full object-cover" alt="chef" />
+                                <span className={`text-sm font-medium group-hover:text-primary ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{recipe.createdBy?.username}</span>
+                            </Link>
+
                             <div className={`flex items-center gap-4 text-sm mt-3 ${subText}`}>
                                 <div className="flex items-center gap-1">
                                     <Clock size={16} /> {recipe.cookingTime}m
@@ -86,7 +93,7 @@ const RecipeDetailPanel = ({ recipeId, onClose }) => {
 
                         <p className={`text-sm leading-relaxed ${subText}`}>{recipe.description}</p>
 
-
+                        {/* Ingredients Preview */}
                         <div>
                             <h3 className={`font-bold mb-3 ${textColor}`}>Ingredients</h3>
                             <ul className="space-y-2">
@@ -96,22 +103,7 @@ const RecipeDetailPanel = ({ recipeId, onClose }) => {
                                         {ing}
                                     </li>
                                 ))}
-                                {recipe.ingredients?.length > 5 && <li className={`text-xs italic pl-4 ${subText}`}>+ {recipe.ingredients.length - 5} more</li>}
                             </ul>
-                        </div>
-
-                        <div>
-                            <h3 className={`font-bold mb-3 ${textColor}`}>Instructions</h3>
-                            {isLocked ? (
-                                <div className={`p-6 rounded-xl text-center border-2 border-dashed ${isDarkMode ? 'border-gray-800 bg-gray-900/50' : 'border-gray-200 bg-gray-50'}`}>
-                                    <p className={`text-sm mb-3 ${subText}`}>Locked for Premium Members.</p>
-                                    <Link to="/subscription" className="text-primary text-sm font-bold hover:underline">
-                                        Upgrade
-                                    </Link>
-                                </div>
-                            ) : (
-                                <p className={`text-sm whitespace-pre-wrap leading-relaxed line-clamp-6 ${subText}`}>{recipe.instructions}</p>
-                            )}
                         </div>
                     </div>
                 ) : (

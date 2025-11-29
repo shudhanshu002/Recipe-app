@@ -5,7 +5,7 @@ import { upload } from '../middlewares/multer.middleware.js';
 
 const router = Router();
 
-router.route('/').get(getAllRecipes);
+router.route('/').get(optionalAuth, getAllRecipes);
 
 
 router.route('/:id')

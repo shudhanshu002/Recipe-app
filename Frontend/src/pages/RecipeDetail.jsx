@@ -77,7 +77,6 @@ const RecipeDetail = () => {
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 mb-10">
-            {/* ✅ MEDIA CAROUSEL (Images + Video) */}
             <div className="space-y-4">
                 <div className={`aspect-video w-full rounded-2xl overflow-hidden shadow-lg relative ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} group`}>
                     {/* Display Current Media */}
@@ -169,10 +168,12 @@ const RecipeDetail = () => {
                 <p className={`text-lg leading-relaxed ${subText}`}>{recipe?.description}</p>
 
                 <div className={`flex gap-6 text-sm py-4 border-y ${metaBorder} ${subText}`}>
-                    <div className="flex items-center gap-2">
-                        <User size={18} />
-                        <span>By {recipe?.createdBy?.username || 'Chef'}</span>
-                    </div>
+                    
+                    <Link to={`/profile/${recipe?.createdBy?.username}`} className="flex items-center gap-2 hover:text-primary transition-colors group">
+                        <img src={recipe?.createdBy?.avatar || 'https://via.placeholder.com/30'} className="w-6 h-6 rounded-full object-cover" alt="Chef" />
+                        <span className={`font-medium group-hover:text-primary ${textColor}`}>By {recipe?.createdBy?.username || 'Chef'}</span>
+                    </Link>
+
                     <div className="flex items-center gap-2">
                         <Clock size={18} />
                         <span>{recipe?.cookingTime || 30} mins</span>
@@ -211,7 +212,7 @@ const RecipeDetail = () => {
                 </div>
             </div>
 
-            {/* ✅ VIDEO SECTION (AT BOTTOM) */}
+
             <div className="pt-8 border-t border-gray-200 dark:border-gray-800">
                 <h3 className={`text-2xl font-bold mb-4 flex items-center gap-2 ${textColor}`}>
                     <Video className="text-primary" /> Video Tutorial
