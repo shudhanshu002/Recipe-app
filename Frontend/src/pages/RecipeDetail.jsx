@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Clock, User, Star, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, User, Star, Lock, ChevronLeft, ChevronRight, PlayCircle, Video } from 'lucide-react';
 import { recipeApi } from '../api/recipes';
 import useThemeStore from '../store/useThemeStore';
 
@@ -11,8 +11,8 @@ const RecipeDetail = () => {
     const [loading, setLoading] = useState(true);
     const [isLocked, setIsLocked] = useState(false);
 
-    
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    // Carousel State
+    const [currentIndex, setCurrentIndex] = useState(0);
 
     useEffect(() => {
         const fetchRecipe = async () => {
@@ -20,6 +20,7 @@ const RecipeDetail = () => {
                 const data = await recipeApi.getOne(id);
                 setRecipe(data);
             } catch (err) {
+                // Handle Premium Lock
                 if (err.response?.status === 403) {
                     setRecipe(err.response.data.data);
                     setIsLocked(true);
@@ -31,22 +32,38 @@ const RecipeDetail = () => {
         if (id) fetchRecipe();
     }, [id]);
 
-    
-    const nextImage = (e) => {
+    // Helper to combine Images + Video into one list
+    const getMediaList = () => {
+        if (!recipe) return [];
+
+        // 1. Add Images
+        const list = recipe.images?.map((url) => ({ type: 'image', url })) || [];
+
+        // 2. Add Video (Only if exists and NOT locked)
+        if (recipe.videoUrl && !isLocked) {
+            list.push({ type: 'video', url: recipe.videoUrl });
+        }
+        return list;
+    };
+
+    const mediaList = getMediaList();
+
+    // Carousel Handlers
+    const nextSlide = (e) => {
         e?.stopPropagation();
-        if (recipe?.images?.length > 1) {
-            setCurrentImageIndex((prev) => (prev + 1) % recipe.images.length);
+        if (mediaList.length > 1) {
+            setCurrentIndex((prev) => (prev + 1) % mediaList.length);
         }
     };
 
-    const prevImage = (e) => {
+    const prevSlide = (e) => {
         e?.stopPropagation();
-        if (recipe?.images?.length > 1) {
-            setCurrentImageIndex((prev) => (prev === 0 ? recipe.images.length - 1 : prev - 1));
+        if (mediaList.length > 1) {
+            setCurrentIndex((prev) => (prev === 0 ? mediaList.length - 1 : prev - 1));
         }
     };
 
-    
+    // Styles
     const textColor = isDarkMode ? 'text-white' : 'text-gray-900';
     const subText = isDarkMode ? 'text-gray-300' : 'text-gray-600';
     const metaBorder = isDarkMode ? 'border-gray-700' : 'border-gray-100';
@@ -56,16 +73,31 @@ const RecipeDetail = () => {
     if (loading) return <div className={`text-center py-20 ${textColor}`}>Loading...</div>;
     if (!recipe && !isLocked) return <div className={`text-center py-20 ${textColor}`}>Recipe not found</div>;
 
-    const currentImage = recipe.images?.[currentImageIndex] || 'https://via.placeholder.com/800x450?text=No+Image';
+    const currentMedia = mediaList[currentIndex];
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 mb-10">
-            
+            {/* ✅ MEDIA CAROUSEL (Images + Video) */}
             <div className="space-y-4">
                 <div className={`aspect-video w-full rounded-2xl overflow-hidden shadow-lg relative ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} group`}>
-                    <img src={currentImage} alt={recipe.title} className="w-full h-full object-cover transition-transform duration-300" />
+                    {/* Display Current Media */}
+                    {currentMedia?.type === 'video' ? (
+                        <video
+                            src={currentMedia.url}
+                            controls
+                            className="w-full h-full object-contain bg-black"
+                            autoPlay
+                            muted // Muted required for autoplay in many browsers
+                        />
+                    ) : (
+                        <img
+                            src={currentMedia?.url || 'https://via.placeholder.com/800x450?text=No+Image'}
+                            alt={recipe.title}
+                            className="w-full h-full object-cover transition-transform duration-300"
+                        />
+                    )}
 
-                    
+                    {/* Premium Lock Overlay */}
                     {isLocked && (
                         <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white backdrop-blur-sm p-4 text-center z-10">
                             <Lock size={48} className="mb-4 text-yellow-400" />
@@ -74,51 +106,57 @@ const RecipeDetail = () => {
                         </div>
                     )}
 
-                    
-                    {recipe.images?.length > 1 && (
+                    {/* Navigation Arrows */}
+                    {mediaList.length > 1 && (
                         <>
                             <button
-                                onClick={prevImage}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-all opacity-0 group-hover:opacity-100"
+                                onClick={prevSlide}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-all opacity-0 group-hover:opacity-100 z-20"
                             >
                                 <ChevronLeft size={24} />
                             </button>
                             <button
-                                onClick={nextImage}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-all opacity-0 group-hover:opacity-100"
+                                onClick={nextSlide}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-all opacity-0 group-hover:opacity-100 z-20"
                             >
                                 <ChevronRight size={24} />
                             </button>
                         </>
                     )}
 
-
-                    {recipe.images?.length > 1 && (
-                        <div className="absolute bottom-4 right-4 px-3 py-1 bg-black/60 text-white text-xs rounded-full">
-                            {currentImageIndex + 1} / {recipe.images.length}
+                    {/* Counter Badge */}
+                    {mediaList.length > 1 && (
+                        <div className="absolute bottom-4 right-4 px-3 py-1 bg-black/60 text-white text-xs rounded-full z-20">
+                            {currentIndex + 1} / {mediaList.length}
                         </div>
                     )}
                 </div>
 
-
-                {recipe.images?.length > 1 && (
+                {/* Thumbnails Row */}
+                {mediaList.length > 1 && (
                     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                        {recipe.images.map((img, idx) => (
+                        {mediaList.map((item, idx) => (
                             <button
                                 key={idx}
-                                onClick={() => setCurrentImageIndex(idx)}
+                                onClick={() => setCurrentIndex(idx)}
                                 className={`relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${
-                                    currentImageIndex === idx ? 'border-primary ring-2 ring-primary/30' : 'border-transparent opacity-70 hover:opacity-100'
+                                    currentIndex === idx ? 'border-primary ring-2 ring-primary/30' : 'border-transparent opacity-70 hover:opacity-100'
                                 }`}
                             >
-                                <img src={img} alt={`Thumbnail ${idx}`} className="w-full h-full object-cover" />
+                                {item.type === 'video' ? (
+                                    <div className="w-full h-full bg-black flex items-center justify-center text-white">
+                                        <PlayCircle size={24} />
+                                    </div>
+                                ) : (
+                                    <img src={item.url} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                                )}
                             </button>
                         ))}
                     </div>
                 )}
             </div>
 
-
+            {/* Title & Meta */}
             <div className="space-y-4">
                 <div className="flex justify-between items-start">
                     <h1 className={`text-4xl font-bold ${textColor}`}>{recipe?.title || 'Premium Recipe'}</h1>
@@ -143,14 +181,14 @@ const RecipeDetail = () => {
                 </div>
             </div>
 
-
+            {/* Body Content */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="md:col-span-1 space-y-6">
                     <h3 className={`text-xl font-bold ${textColor}`}>Ingredients</h3>
                     <ul className="space-y-3">
                         {recipe?.ingredients?.map((ing, i) => (
                             <li key={i} className={`flex items-start gap-3 ${subText}`}>
-                                <span className="w-2 h-2 rounded-full bg-primary mt-2" />
+                                <span className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
                                 {ing}
                             </li>
                         ))}
@@ -171,6 +209,33 @@ const RecipeDetail = () => {
                         <div className={`whitespace-pre-wrap leading-relaxed ${subText}`}>{recipe?.instructions}</div>
                     )}
                 </div>
+            </div>
+
+            {/* ✅ VIDEO SECTION (AT BOTTOM) */}
+            <div className="pt-8 border-t border-gray-200 dark:border-gray-800">
+                <h3 className={`text-2xl font-bold mb-4 flex items-center gap-2 ${textColor}`}>
+                    <Video className="text-primary" /> Video Tutorial
+                </h3>
+
+                {isLocked ? (
+                    <div className={`aspect-video w-full rounded-xl flex flex-col items-center justify-center border-2 border-dashed ${lockBoxBg}`}>
+                        <Lock className="text-gray-400 mb-2" size={40} />
+                        <p className={subText}>Video is locked for Premium Members</p>
+                    </div>
+                ) : recipe?.videoUrl ? (
+                    <div className="aspect-video w-full rounded-xl overflow-hidden bg-black shadow-lg">
+                        <video
+                            src={recipe.videoUrl}
+                            controls
+                            className="w-full h-full"
+                            poster={recipe.images?.[0]} // Use first image as poster
+                        />
+                    </div>
+                ) : (
+                    <div className={`p-8 text-center rounded-xl border border-dashed ${isDarkMode ? 'border-gray-700 text-gray-500' : 'border-gray-300 text-gray-400'}`}>
+                        No video available for this recipe.
+                    </div>
+                )}
             </div>
         </div>
     );
