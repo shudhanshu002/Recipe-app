@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    title: {
+      type: String,
+      default: "Foodie"
+    },
     password: {
       type: String,
       required: function () {
