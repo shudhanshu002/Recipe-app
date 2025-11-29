@@ -4,9 +4,10 @@ import { Strategy as FacebookStrategy } from 'passport-facebook';
 import { User } from '../models/user.model.js';
 import dotenv from 'dotenv';
 
+// ✅ Load env variables immediately
 dotenv.config();
 
-// handle the logic for both Google and Facebook
+// Helper to handle the logic for both Google and Facebook
 const socialLoginCallback = async (accessToken, refreshToken, profile, done) => {
     try {
         const email = profile.emails?.[0]?.value;
@@ -36,7 +37,7 @@ const socialLoginCallback = async (accessToken, refreshToken, profile, done) => 
                 loginType: profile.provider,
                 googleId: profile.provider === 'google' ? profile.id : undefined,
                 facebookId: profile.provider === 'facebook' ? profile.id : undefined,
-                isVerified: true, 
+                isVerified: true,
             });
             return done(null, newUser);
         }
@@ -46,31 +47,34 @@ const socialLoginCallback = async (accessToken, refreshToken, profile, done) => 
 };
 
 // --- GOOGLE STRATEGY ---
-passport.use(
-    new GoogleStrategy(
-        {
-            clientID: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            callbackURL: '/api/v1/users/google/callback',
-        },
-        socialLoginCallback,
-    ),
-);
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    passport.use(
+        new GoogleStrategy(
+            {
+                clientID: process.env.GOOGLE_CLIENT_ID,
+                clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+                callbackURL: '/api/v1/users/google/callback',
+            },
+            socialLoginCallback,
+        ),
+    );
+}
 
 // --- FACEBOOK STRATEGY ---
-passport.use(
-    new FacebookStrategy(
-        {
-            clientID: process.env.FACEBOOK_APP_ID,
-            clientSecret: process.env.FACEBOOK_APP_SECRET,
-            callbackURL: '/api/v1/users/facebook/callback',
-            profileFields: ['id', 'displayName', 'photos', 'email'],
-        },
-        socialLoginCallback,
-    ),
-);
+if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
+    passport.use(
+        new FacebookStrategy(
+            {
+                clientID: process.env.FACEBOOK_APP_ID,
+                clientSecret: process.env.FACEBOOK_APP_SECRET,
+                callbackURL: '/api/v1/users/facebook/callback',
+                profileFields: ['id', 'displayName', 'photos', 'email'],
+            },
+            socialLoginCallback,
+        ),
+    );
+}
 
-// Serialize/Deserialize
 passport.serializeUser((user, done) => done(null, user._id));
 passport.deserializeUser(async (id, done) => {
     const user = await User.findById(id);
