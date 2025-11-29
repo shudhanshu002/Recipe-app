@@ -311,6 +311,33 @@ const updateAccountDetails = asyncHandler(async (req, res)=> {
     );
 });
 
+
+const updateUserCoverImage = asyncHandler(async(req,res)=> {
+    const coverLocalPath = req.file?.path;
+
+    if(!coverLocalPath) {
+        throw new ApiError(400, "Cover image file is missing");
+    }
+
+    const coverImage = await uploadOnCloudinary(coverLocalPath);
+
+    if(!coverImage) {
+        throw new ApiError(500, "Error uploading cover image");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: {coverImage: coverImage.url}
+        },
+        {new: true}
+    ).select("-password");
+
+    return res.status(200).json(
+        new ApiResponse(200, user, "Cover Image uploaded successfully")
+    );
+});
+
 export {
     registerUser,
     loginUser,
@@ -319,5 +346,6 @@ export {
     handleSocialLogin,
     refreshAccessToken,
     updateUserAvatar,
-    updateAccountDetails
+    updateAccountDetails,
+    updateUserCoverImage
 }
