@@ -3,74 +3,78 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema(
-  {
-    username: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      index: true,
-      trim: true,
+    {
+        username: {
+            type: String,
+            required: true,
+            unique: true,
+            lowercase: true,
+            index: true,
+            trim: true,
+        },
+        email: {
+            type: String,
+            required: true,
+            unique: true,
+            lowercase: true,
+            trim: true,
+        },
+        title: {
+            type: String,
+            default: 'Foodie',
+        },
+        coverImage: {
+            type: String,
+            default: 'https://placehold.co/1200x400?text=Cover+Image', // Default banner
+        },
+        password: {
+            type: String,
+            required: function () {
+                return this.loginType === 'email';
+            },
+        },
+        loginType: {
+            type: String,
+            enum: ['email', 'google', 'facebook'],
+            default: 'email',
+        },
+        googleId: {
+            type: String,
+            unique: true,
+            sparse: true,
+        },
+        facebookId: {
+            type: String,
+            unique: true,
+            sparse: true,
+        },
+        isVerified: {
+            type: Boolean,
+            default: false,
+        },
+        otp: {
+            type: String,
+        },
+        otpExpiry: {
+            type: Date,
+        },
+        avatar: {
+            type: String,
+            default: 'https://cdn-icons-png.flaticon.com/512/149/149071.png', // Default user icon
+        },
+        role: {
+            type: String,
+            enum: ['user', 'admin'],
+            default: 'user',
+        },
+        refreshToken: {
+            type: String,
+        },
+        accessToken: {
+            type: String,
+        },
     },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
-    title: {
-      type: String,
-      default: "Foodie"
-    },
-    password: {
-      type: String,
-      required: function () {
-        return this.loginType === 'email';
-      },
-    },
-    loginType: {
-      type: String,
-      enum: ['email', 'google', 'facebook'],
-      default: 'email',
-    },
-    googleId: {
-      type: String,
-      unique: true,
-      sparse: true,
-    },
-    facebookId: {
-      type: String,
-      unique: true,
-      sparse: true,
-    },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
-    otp: {
-      type: String,
-    },
-    otpExpiry: {
-      type: Date,
-    },
-    avatar: {
-      type: String,
-      default: 'https://cdn-icons-png.flaticon.com/512/149/149071.png', // Default user icon
-    },
-    role: {
-        type: String,
-        enum: ["user", "admin"],
-        default: "user"
-    },
-    refreshToken: {
-      type: String,
-    },
-    accessToken: {
-      type: String,
-    },
-  },
-  { timestamps: true },
+    { timestamps: true },
 );
 
 //pre-save-hook
