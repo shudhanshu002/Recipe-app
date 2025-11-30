@@ -1,4 +1,3 @@
-// Apierror handler
 
 export class ApiError extends Error {
     constructor(error){
@@ -10,13 +9,12 @@ export class ApiError extends Error {
     }
 }
 
-// success response
+
 export const handleSuccessResponse = (response) => {
     return response?.data?.data || response?.data;
 };
 
 
-// error response
 export const handleErrorResponse = (error) => {
     throw new ApiError(error);
 };
