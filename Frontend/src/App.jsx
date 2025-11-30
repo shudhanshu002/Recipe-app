@@ -23,6 +23,9 @@ import Profile from './pages/Profile';
 import Notifications from './pages/Notifications';
 import Subscription from './pages/Subscription';
 import Settings from './pages/Settings';
+import BlogFeed from './pages/BlogFeed';
+import CreateBlog from './pages/CreateBlog';
+import BlogDetail from './pages/BlogDetail';
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useAuthStore();
@@ -36,11 +39,10 @@ function App() {
 
     useEffect(() => {
         const checkAuth = async () => {
-
-          if (!isAuthenticated) {
-              setIsInitializing(false);
-              return;
-          }
+            if (!isAuthenticated) {
+                setIsInitializing(false);
+                return;
+            }
 
             try {
                 const response = await api.post('/users/refresh-token');
@@ -120,8 +122,33 @@ function App() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
 
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/premium-recipes" element={<ProtectedRoute><h1>Premium Recipes Page (Coming Soon)</h1></ProtectedRoute>} />
+            <Route path="/blogs" element={<BlogFeed />} />
+            <Route path="/blogs/:id" element={<BlogDetail />} />
+            <Route
+                path="/create-blog"
+                element={
+                    <ProtectedRoute>
+                        <CreateBlog />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/settings"
+                element={
+                    <ProtectedRoute>
+                        <Settings />
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/premium-recipes"
+                element={
+                    <ProtectedRoute>
+                        <h1>Premium Recipes Page (Coming Soon)</h1>
+                    </ProtectedRoute>
+                }
+            />
         </Routes>
     );
 }

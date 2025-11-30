@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { blogApi } from '../api/blogs';
 import useThemeStore from '../store/useThemeStore';
 import { PenTool, Loader2 } from 'lucide-react';
-import BlogCard from '../components/BlogCard'; 
+import BlogCard from '../components/BlogCard';
 
 const BlogFeed = () => {
     const [blogs, setBlogs] = useState([]);
@@ -16,6 +16,11 @@ const BlogFeed = () => {
             .then(setBlogs)
             .finally(() => setLoading(false));
     }, []);
+
+    // ✅ FIX: Function to remove blog from local state immediately
+    const handleRemoveBlog = (deletedId) => {
+        setBlogs((prevBlogs) => prevBlogs.filter((blog) => blog._id !== deletedId));
+    };
 
     const textColor = isDarkMode ? 'text-white' : 'text-gray-900';
 
@@ -35,10 +40,21 @@ const BlogFeed = () => {
                 </Link>
             </div>
 
-            <div className="space-y-2">
-                {blogs.length > 0 ? blogs.map((blog) => <BlogCard key={blog._id} blog={blog} />) : <p className="text-center text-gray-500 py-10">No blog posts yet. Be the first to write one!</p>}
+            <div className="space-y-4">
+                {blogs.length > 0 ? (
+                    blogs.map((blog) => (
+                        <BlogCard
+                            key={blog._id}
+                            blog={blog}
+                            onDelete={handleRemoveBlog} // ✅ PASS THE HANDLER HERE
+                        />
+                    ))
+                ) : (
+                    <p className="text-center text-gray-500 py-10">No blog posts yet. Be the first to write one!</p>
+                )}
             </div>
         </div>
     );
 };
+
 export default BlogFeed;

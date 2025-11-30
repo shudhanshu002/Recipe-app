@@ -130,4 +130,20 @@ const uploadBlogImage = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, { url: image.url }, 'Image uploaded successfully'));
 });
 
-export { createBlog, getAllBlogs, getBlogById, addComment, getComments, toggleBlogReaction, toggleCommentLike, uploadBlogImage };
+const deleteBlog = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const blog = await Blog.findById(id);
+    if (!blog) throw new ApiError(404, 'Blog not found');
+
+    if (blog.author.toString() !== req.user._id.toString()) {
+        throw new ApiError(403, 'You are not allowed to delete this blog');
+    }
+
+    await Comment.deleteMany({ blog: id });
+
+    await Blog.findByIdAndDelete(id);
+
+    return res.status(200).json(new ApiResponse(200, {}, 'Blog deleted successfully'));
+});
+
+export { createBlog, getAllBlogs, getBlogById, addComment, getComments, toggleBlogReaction, toggleCommentLike, uploadBlogImage, deleteBlog };

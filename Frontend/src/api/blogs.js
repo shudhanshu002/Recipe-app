@@ -38,4 +38,7 @@ export const blogApi = {
         });
         return response.data.data.url; // Returns the Cloudinary URL
     },
+    delete: async (id) => {
+        return await api.delete(`/blogs/${id}`);
+    },
 };

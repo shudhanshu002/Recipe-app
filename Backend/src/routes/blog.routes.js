@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createBlog, getAllBlogs, getBlogById, addComment, getComments, toggleBlogReaction, toggleCommentLike, uploadBlogImage } from '../controllers/blog.controller.js';
+import { createBlog, getAllBlogs, getBlogById, addComment, getComments, toggleBlogReaction, toggleCommentLike, uploadBlogImage, deleteBlog } from '../controllers/blog.controller.js';
 import { verifyJWT, optionalAuth } from '../middlewares/auth.middleware.js';
 import { upload } from '../middlewares/multer.middleware.js';
 
@@ -9,7 +9,7 @@ router.route('/').get(getAllBlogs).post(verifyJWT, upload.single('coverImage'), 
 
 router.route('/upload-image').post(verifyJWT, upload.single('image'), uploadBlogImage);
 
-router.route('/:id').get(optionalAuth, getBlogById);
+router.route('/:id').get(optionalAuth, getBlogById).delete(verifyJWT, deleteBlog);
 
 router.route('/:id/react').post(verifyJWT, toggleBlogReaction);
 

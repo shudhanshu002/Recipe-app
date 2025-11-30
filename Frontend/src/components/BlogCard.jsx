@@ -1,30 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, Eye, Heart, Send, ThumbsUp, Share2 } from 'lucide-react';
+import { MessageCircle, Eye, Heart, Send, ThumbsUp, Share2, Trash2 } from 'lucide-react';
 import useThemeStore from '../store/useThemeStore';
 import useAuthStore from '../store/useAuthStore';
 import { blogApi } from '../api/blogs';
 import { formatRelativeDate } from '../utils/formatDate';
 import ShareModal from './ShareModal';
 
-
+// Helper to strip HTML
 const stripHtml = (html) => {
     if (!html) return '';
-
-    // 1. Replace block tags with newlines so text doesn't smash together
     let processed = html
         .replace(/<\/p>/gi, '\n')
         .replace(/<br\s*\/?>/gi, '\n')
         .replace(/<\/div>/gi, '\n')
         .replace(/<\/h[1-6]>/gi, '\n')
         .replace(/<\/li>/gi, '\n');
-
-    // 2. Use DOM parser to strip remaining tags and decode entities
     const tmp = document.createElement('DIV');
     tmp.innerHTML = processed;
     let text = tmp.textContent || tmp.innerText || '';
-
-    // 3. Trim extra whitespace but keep single newlines
     return text.trim();
 };
 
@@ -48,12 +42,12 @@ const ReactionPicker = ({ onReact, onClose }) => {
     );
 };
 
-const BlogCard = ({ blog }) => {
+const BlogCard = ({ blog, onDelete }) => {
+    // ✅ Receive onDelete prop
     const { isDarkMode } = useThemeStore();
     const { user } = useAuthStore();
     const navigate = useNavigate();
 
-    // Local State
     const [reactions, setReactions] = useState(blog.reactions || []);
     const [commentCount, setCommentCount] = useState(blog.commentCount || 0);
     const [showReactions, setShowReactions] = useState(false);
@@ -64,6 +58,9 @@ const BlogCard = ({ blog }) => {
 
     const myReaction = reactions.find((r) => r.user === user?._id)?.emoji;
     const shareUrl = `${window.location.origin}/blogs/${blog._id}`;
+
+    // Check Ownership
+    const isOwner = user && (user._id === blog.author?._id || user.username === blog.author?.username);
 
     // Handlers
     const handleCardClick = () => navigate(`/blogs/${blog._id}`);
@@ -92,6 +89,20 @@ const BlogCard = ({ blog }) => {
             alert('Failed to comment');
         } finally {
             setIsPosting(false);
+        }
+    };
+
+    // ✅ DELETE HANDLER
+    const handleDelete = async (e) => {
+        e.stopPropagation(); // Prevent navigation
+        if (!window.confirm('Are you sure you want to delete this blog post?')) return;
+
+        try {
+            await blogApi.delete(blog._id);
+            // ✅ Call parent to remove from UI immediately
+            if (onDelete) onDelete(blog._id);
+        } catch (error) {
+            alert('Failed to delete blog');
         }
     };
 
@@ -139,12 +150,20 @@ const BlogCard = ({ blog }) => {
                                     {blog.topic}
                                 </span>
                             </div>
+
+                            {/* ✅ Delete Button (Visible only to Owner) */}
+                            {isOwner && (
+                                <button
+                                    onClick={handleDelete}
+                                    className="p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 z-20"
+                                    title="Delete Post"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            )}
                         </div>
                         <h2 className={`text-lg font-bold mb-1 ${textColor}`}>{blog.title}</h2>
-
-                        {/* ✅ FIXED: Added whitespace-pre-line to respect newlines */}
                         <p className={`text-sm mb-2 ${subText} line-clamp-3 whitespace-pre-line`}>{stripHtml(blog.content)}</p>
-
                         {blog.coverImage && (
                             <div className="mt-3 h-32 w-full overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
                                 <img src={blog.coverImage} alt="Cover" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
