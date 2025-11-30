@@ -1,11 +1,18 @@
 import { Router } from 'express';
-import { addReview, getRecipeReviews } from '../controllers/review.controller.js';
-import { verifyJWT } from '../middlewares/auth.middleware.js';
+import { addReview, getRecipeReviews, addReply, toggleReviewReaction, toggleReplyReaction } from '../controllers/review.controller.js';
+import { verifyJWT, optionalAuth } from '../middlewares/auth.middleware.js';
+import { upload } from '../middlewares/multer.middleware.js'; // Import
 
 const router = Router();
 
-// Allow anyone to see reviews, but only logged in users can add them
-router.route('/:recipeId').get(getRecipeReviews);
-router.route('/:recipeId').post(verifyJWT, addReview);
+router.route('/:recipeId').get(optionalAuth, getRecipeReviews).post(verifyJWT, upload.single('media'), addReview);
+
+router.route('/:reviewId/reply').post(verifyJWT, upload.single('media'), addReply);
+
+router.route('/:reviewId/react').post(verifyJWT, toggleReviewReaction);
+
+router.route('/:reviewId/replies/:replyId/react').post(verifyJWT, toggleReplyReaction);
+
+router.route('/:reviewId/like').post(verifyJWT, toggleReviewReaction);
 
 export default router;
