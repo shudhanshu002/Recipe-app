@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { Heart, Bookmark, Clock, Star, Trash2 } from 'lucide-react';
 import { socialApi } from '../api/social';
-import { recipeApi } from '../api/recipes'; // You need this to call delete
+import { recipeApi } from '../api/recipes'; 
 import useAuthStore from '../store/useAuthStore';
 import useThemeStore from '../store/useThemeStore';
 import { formatTime, formatRelativeDate } from '../utils/formatDate';

@@ -77,7 +77,7 @@ const DateStrip = ({ plans, onDateClick }) => {
 
             <div
                 ref={scrollRef}
-                // ✅ CLASSES TO HIDE SCROLLBAR
+                // CLASSES TO HIDE SCROLLBAR
                 className="w-full overflow-x-auto pb-4 pt-2 flex gap-3 px-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
             >
                 {slots.map((item, index) => {
