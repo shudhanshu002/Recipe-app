@@ -4,19 +4,19 @@ const likeSchema = new mongoose.Schema(
     {
         recipe: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Recipe"
+            ref: 'Recipe',
         },
-        review: {
+        comment: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Review"
+            ref: 'Comment', 
         },
         likedBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
-            required: true
-        }
+            ref: 'User',
+            required: true,
+        },
     },
-    {timestamps: true}
+    { timestamps: true },
 );
 
 

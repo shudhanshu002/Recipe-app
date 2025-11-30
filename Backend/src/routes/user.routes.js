@@ -1,7 +1,8 @@
 import { Router } from "express";
 import passport from "passport";
-import { loginUser, logoutUser, registerUser, verifyUserOtp, handleSocialLogin, refreshAccessToken } from "../controllers/user.controller.js";
+import { loginUser, logoutUser, registerUser, verifyUserOtp, handleSocialLogin, refreshAccessToken, updateUserAvatar, updateAccountDetails, updateUserCoverImage } from "../controllers/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
@@ -37,5 +38,9 @@ router.route("/facebook/callback").get(
     passport.authenticate("facebook", { session: false, failureRedirect: "/login" }),
     handleSocialLogin
 );
+
+router.route('/avatar').patch(verifyJWT, upload.single('avatar'), updateUserAvatar);
+router.route('/update-account').patch(verifyJWT, updateAccountDetails);
+router.route('/cover-image').patch(verifyJWT, upload.single('coverImage'), updateUserCoverImage);
 
 export default router;
