@@ -12,6 +12,7 @@ import notificationRouter from "./notification.routes.js";
 import mealPlanRouter from "./mealplan.routes.js";
 import shoppingListRouter from "./shoppinglist.routes.js"
 import shortRouter from './short.routes.js';
+import blogRouter from './blog.routes.js';
 
 
 import { upgradeToPremium } from "../controllers/payment.controller.js";
@@ -31,6 +32,7 @@ router.use("/notifications",notificationRouter);
 router.use("/mealplanner", mealPlanRouter); 
 router.use("/shoppinglist", shoppingListRouter);
 router.use("/shorts", shortRouter);
+router.use('/blogs', blogRouter);
 // Payment
 router.post("/payment/subscribe", verifyJWT, upgradeToPremium);
 
