@@ -1,26 +1,60 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Upload, Plus, X, Video } from 'lucide-react';
+import { Loader2, Upload, Plus, X, Video, Trash2 } from 'lucide-react';
 import { recipeApi } from '../api/recipes';
 import Input from '../components/Input';
 import useThemeStore from '../store/useThemeStore';
+
+const CUISINES = [
+    'Italian',
+    'Indian',
+    'Mexican',
+    'Chinese',
+    'American',
+    'Thai',
+    'Japanese',
+    'French',
+    'Greek',
+    'Spanish',
+    'Lebanese',
+    'Korean',
+    'Vietnamese',
+    'Turkish',
+    'Caribbean',
+    'Mediterranean',
+    'German',
+    'Brazilian',
+    'Moroccan',
+    'Ethiopian',
+    'Other',
+];
 
 const CreateRecipe = () => {
     const navigate = useNavigate();
     const { isDarkMode } = useThemeStore();
     const [isLoading, setIsLoading] = useState(false);
+
+    // Arrays state
     const [ingredients, setIngredients] = useState(['']);
     const [images, setImages] = useState([]);
     const [previewUrls, setPreviewUrls] = useState([]);
 
-    // ✅ NEW: Video State
+    // Video state
     const [video, setVideo] = useState(null);
     const [videoPreview, setVideoPreview] = useState(null);
 
-    const { register, handleSubmit } = useForm();
+    const {
+        register,
+        handleSubmit,
+        watch,
+        formState: { errors },
+    } = useForm();
 
-    // Ingredient Handlers
+    // Watch the cuisine dropdown to conditionally show the input
+    const selectedCuisine = watch('cuisine');
+
+    // --- Ingredient Handlers ---
     const handleAddIngredient = () => setIngredients([...ingredients, '']);
     const handleRemoveIngredient = (i) => setIngredients(ingredients.filter((_, idx) => idx !== i));
     const handleIngredientChange = (i, v) => {
@@ -29,14 +63,23 @@ const CreateRecipe = () => {
         setIngredients(n);
     };
 
-    // Image Handler
+    // --- Image Handlers ---
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
-        setImages([...images, ...files]);
-        setPreviewUrls([...previewUrls, ...files.map((f) => URL.createObjectURL(f))]);
+        if (files.length + images.length > 10) return alert('Max 10 images allowed');
+        setImages((prev) => [...prev, ...files]);
+        setPreviewUrls((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
     };
 
-    // ✅ NEW: Video Handler
+    const handleRemoveImage = (index) => {
+        setImages((prev) => prev.filter((_, i) => i !== index));
+        setPreviewUrls((prev) => {
+            URL.revokeObjectURL(prev[index]);
+            return prev.filter((_, i) => i !== index);
+        });
+    };
+
+    // --- Video Handler ---
     const handleVideoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -45,19 +88,44 @@ const CreateRecipe = () => {
         }
     };
 
+    // --- Submit Handler ---
     const onSubmit = async (data) => {
         setIsLoading(true);
         try {
             const formData = new FormData();
-            Object.keys(data).forEach((key) => formData.append(key, data[key]));
 
-            ingredients.forEach((i) => i.trim() && formData.append('ingredients', i));
-            images.forEach((i) => formData.append('images', i));
+            // Basic Fields
+            formData.append('title', data.title);
+            formData.append('description', data.description);
+            formData.append('instructions', data.instructions);
+            formData.append('difficulty', data.difficulty);
+            formData.append('mainIngredient', data.mainIngredient);
+            formData.append('cookingTime', data.cookingTime);
+            formData.append('isPremium', data.isPremium);
 
-            // ✅ Append Video
-            if (video) {
-                formData.append('video', video);
+            // ✅ CRITICAL FIX: Handle Custom Cuisine Logic
+            let finalCuisine = data.cuisine;
+
+            if (finalCuisine === 'Other') {
+                // If user selected "Other", use the text from the custom input
+                if (!data.customCuisine || data.customCuisine.trim() === '') {
+                    alert('Please type the name of the cuisine.');
+                    setIsLoading(false);
+                    return;
+                }
+                finalCuisine = data.customCuisine.trim();
             }
+
+            // Send the actual name (e.g. "Peruvian"), NEVER "Other"
+            formData.append('cuisine', finalCuisine);
+
+            // Arrays
+            ingredients.forEach((ing) => {
+                if (ing.trim()) formData.append('ingredients', ing);
+            });
+
+            images.forEach((image) => formData.append('images', image));
+            if (video) formData.append('video', video);
 
             await recipeApi.create(formData);
             navigate('/');
@@ -87,18 +155,19 @@ const CreateRecipe = () => {
                     <Input label="Main Ingredient" placeholder="Chicken" {...register('mainIngredient', { required: true })} />
                 </div>
 
-                {/* Dropdowns */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Cuisine Dropdown */}
                     <div className="flex flex-col gap-1">
                         <label className={`text-sm font-medium ${labelColor}`}>Cuisine</label>
                         <select {...register('cuisine')} className={`w-full px-4 py-2 rounded-lg border ${inputBg}`}>
-                            <option value="Italian">Italian</option>
-                            <option value="Indian">Indian</option>
-                            <option value="Mexican">Mexican</option>
-                            <option value="Chinese">Chinese</option>
-                            <option value="American">American</option>
+                            {CUISINES.map((c) => (
+                                <option key={c} value={c}>
+                                    {c}
+                                </option>
+                            ))}
                         </select>
                     </div>
+
                     <div className="flex flex-col gap-1">
                         <label className={`text-sm font-medium ${labelColor}`}>Difficulty</label>
                         <select {...register('difficulty')} className={`w-full px-4 py-2 rounded-lg border ${inputBg}`}>
@@ -110,13 +179,26 @@ const CreateRecipe = () => {
                     <Input label="Time (mins)" type="number" {...register('cookingTime')} />
                 </div>
 
-                {/* Description */}
+                {/* ✅ CONDITIONAL INPUT: Shows only if "Other" is selected */}
+                {selectedCuisine === 'Other' && (
+                    <div className="animate-in fade-in slide-in-from-top-2">
+                        <Input
+                            label="Type Cuisine Name"
+                            placeholder="e.g. Peruvian"
+                            {...register('customCuisine', {
+                                required: selectedCuisine === 'Other' ? 'Please specify the cuisine' : false,
+                            })}
+                            error={errors.customCuisine}
+                        />
+                    </div>
+                )}
+
                 <div className="flex flex-col gap-1">
                     <label className={`text-sm font-medium ${labelColor}`}>Description</label>
-                    <textarea rows="3" className={`w-full px-4 py-2 rounded-lg border focus:outline-none ${inputBg}`} {...register('description')} />
+                    <textarea rows="3" className={`w-full px-4 py-2 rounded-lg border focus:outline-none ${inputBg}`} {...register('description', { required: true })} />
                 </div>
 
-                {/* Dynamic Ingredients */}
+                {/* Ingredients */}
                 <div>
                     <label className={`text-sm font-medium mb-2 block ${labelColor}`}>Ingredients</label>
                     <div className="space-y-3">
@@ -134,30 +216,44 @@ const CreateRecipe = () => {
                     </div>
                 </div>
 
+                {/* Instructions */}
                 <div className="flex flex-col gap-1">
                     <label className={`text-sm font-medium ${labelColor}`}>Instructions</label>
-                    <textarea rows="6" className={`w-full px-4 py-2 rounded-lg border focus:outline-none ${inputBg}`} {...register('instructions')} />
+                    <textarea rows="6" className={`w-full px-4 py-2 rounded-lg border focus:outline-none ${inputBg}`} {...register('instructions', { required: true })} />
                 </div>
 
-                {/* Image Upload */}
+                {/* Images */}
                 <div>
                     <label className={`text-sm font-medium mb-2 block ${labelColor}`}>Images</label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {previewUrls.map((url, i) => (
-                            <img key={i} src={url} className="aspect-square rounded-lg object-cover" />
+                            <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border dark:border-gray-700">
+                                <img src={url} className="w-full h-full object-cover" alt="preview" />
+                                {/* ✅ Remove Button */}
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveImage(i)}
+                                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
                         ))}
                         <label
-                            className={`aspect-square flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}
+                            className={`aspect-square flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors ${
+                                isDarkMode ? 'border-gray-600' : 'border-gray-300'
+                            }`}
                         >
                             <Upload className="text-gray-400" />
+                            <span className="text-xs text-gray-500 mt-2">Upload</span>
                             <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageChange} />
                         </label>
                     </div>
                 </div>
 
-                {/* ✅ Video Upload Section */}
+                {/* Video */}
                 <div>
-                    <label className={`text-sm font-medium mb-2 block ${labelColor}`}>Video Tutorial (Optional)</label>
+                    <label className={`text-sm font-medium mb-2 block ${labelColor}`}>Video (Optional)</label>
                     <div className={`p-4 border-2 border-dashed rounded-xl text-center ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
                         {videoPreview ? (
                             <div className="relative w-full max-w-sm mx-auto">
@@ -174,7 +270,7 @@ const CreateRecipe = () => {
                                 </button>
                             </div>
                         ) : (
-                            <label className="cursor-pointer block py-8">
+                            <label className="cursor-pointer block py-8 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors rounded-lg">
                                 <Video className="mx-auto text-gray-400 mb-2" size={32} />
                                 <span className={`text-sm ${labelColor}`}>Click to upload video</span>
                                 <input type="file" accept="video/*" className="hidden" onChange={handleVideoChange} />
@@ -188,7 +284,7 @@ const CreateRecipe = () => {
                     <label className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Mark as Premium</label>
                 </div>
 
-                <button type="submit" disabled={isLoading} className="w-full py-3 bg-primary text-black font-bold rounded-lg flex items-center justify-center gap-2 bg-orange-500">
+                <button type="submit" disabled={isLoading} className="w-full py-3 bg-orange-500 text-white font-bold rounded-lg flex items-center justify-center gap-2">
                     {isLoading ? <Loader2 className="animate-spin" /> : 'Publish Recipe'}
                 </button>
             </form>

@@ -89,7 +89,6 @@ const getRecipeById = asyncHandler(async (req, res) => {
   const userId = req.user ? req.user._id : null;
 
   const recipe = await Recipe.findById(id).populate('createdBy', 'username avatar about');
-
   if (!recipe) {
     throw new ApiError(404, 'Recipe not found');
   }
@@ -103,6 +102,8 @@ const getRecipeById = asyncHandler(async (req, res) => {
       isLiked = !!like;
       isBookmarked = !!bookmark;
   }
+
+  const likesCount = await Like.countDocuments({ recipe: id });
 
   // --- PREMIUM ---
   if (recipe.isPremium && (!req.user || !req.user.isSubscriptionActive)) {
@@ -136,82 +137,71 @@ const getRecipeById = asyncHandler(async (req, res) => {
 
 
 const getAllRecipes = asyncHandler(async (req, res) => {
-  try {
-    const {
-      search,
-      cuisine,
-      mainIngredient,
-      sort,
-    } = req.query;
-  
+    const { search, cuisine, mainIngredient, sort } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const userId = req.user ? req.user._id : null;
-  
+
     const query = {};
-  
     if (search) query.title = { $regex: search, $options: 'i' };
     if (cuisine && cuisine !== 'All') query.cuisine = cuisine;
-  
-    
-    if (mainIngredient) {
-      query.mainIngredient = { $regex: mainIngredient, $options: 'i' };
-    }
-  
-    
+    if (mainIngredient) query.mainIngredient = { $regex: mainIngredient, $options: 'i' };
+
     let sortOptions = { createdAt: -1 };
-  
-    if (sort === 'name_asc') {
-      sortOptions = { title: 1 };
-    } else if (sort === 'name_desc') {
-      sortOptions = { title: -1 };
-    } else if (sort === 'oldest') {
-      sortOptions = { createdAt: 1 };
-    }
-  
-    console.log('Fetching recipes with query:', JSON.stringify(query));
-  
-    const recipes = await Recipe.find(query)
-        .sort(sortOptions)
-        .skip(skip)
-        .limit(limit)
-        .select('-instructions -videoUrl') 
-        .populate('createdBy', 'username avatar')
-        .lean(); 
-    
+    if (sort === 'name_asc') sortOptions = { title: 1 };
+    else if (sort === 'name_desc') sortOptions = { title: -1 };
+    else if (sort === 'oldest') sortOptions = { createdAt: 1 };
+
+    // Fetch recipes
+    let recipes = await Recipe.find(query).sort(sortOptions).skip(skip).limit(limit).select('-instructions -videoUrl').populate('createdBy', 'username avatar').lean();
+
+    // ✅ NEW: Efficiently fetch likes count and user status
+    const recipeIds = recipes.map((r) => r._id);
+
+    // 1. Count likes for all fetched recipes
+    // Using aggregation is faster than looping find()
+    const likeCounts = await Like.aggregate([{ $match: { recipe: { $in: recipeIds } } }, { $group: { _id: '$recipe', count: { $sum: 1 } } }]);
+
+    // Convert array to map for O(1) lookup
+    const likeMap = {};
+    likeCounts.forEach((item) => {
+        likeMap[item._id.toString()] = item.count;
+    });
+
+    // 2. Check user status
+    let likedRecipeIds = new Set();
+    let bookmarkedRecipeIds = new Set();
 
     if (userId) {
-        const recipeIds = recipes.map((r) => r._id);
-
-        
         const userLikes = await Like.find({ recipe: { $in: recipeIds }, likedBy: userId });
         const userBookmarks = await Bookmark.find({ recipe: { $in: recipeIds }, user: userId });
-
-        const likedRecipeIds = new Set(userLikes.map((l) => l.recipe.toString()));
-        const bookmarkedRecipeIds = new Set(userBookmarks.map((b) => b.recipe.toString()));
-
-        
-        recipes.forEach((recipe) => {
-            recipe.isLiked = likedRecipeIds.has(recipe._id.toString());
-            recipe.isBookmarked = bookmarkedRecipeIds.has(recipe._id.toString());
-        });
+        likedRecipeIds = new Set(userLikes.map((l) => l.recipe.toString()));
+        bookmarkedRecipeIds = new Set(userBookmarks.map((b) => b.recipe.toString()));
     }
 
+    // 3. Merge data
+    recipes = recipes.map((recipe) => ({
+        ...recipe,
+        likesCount: likeMap[recipe._id.toString()] || 0, // Default 0
+        isLiked: likedRecipeIds.has(recipe._id.toString()),
+        isBookmarked: bookmarkedRecipeIds.has(recipe._id.toString()),
+    }));
+
     const total = await Recipe.countDocuments(query);
-  
+
     return res.status(200).json(
-      new ApiResponse(200, {
-        recipes,
-        currentPage: page,
-        totalPages: Math.ceil(total/limit),
-        totalRecipes: total
-      }, "Recipes fetched successfully")
+        new ApiResponse(
+            200,
+            {
+                recipes,
+                currentPage: page,
+                totalPages: Math.ceil(total / limit),
+                totalRecipes: total,
+            },
+            'Recipes fetched',
+        ),
     );
-  } catch (error) {
-    console.error('ERROR IN GET ALL RECIPES:', error);
-    throw new ApiError(500, 'Server Error while fetching recipes');
-  }
 });
 
 
