@@ -7,11 +7,11 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
 
-
+// 1. CREATE RECIPE (Standard)
 const createRecipe = asyncHandler(async (req, res) => {
     const { title, description, ingredients, instructions, difficulty, cuisine, mainIngredient, isPremium, dietaryTags, cookingTime, calories } = req.body;
 
-    if ([title, description, instructions, difficulty, cuisine].some((f) => f.trim === '')) {
+    if ([title, description, instructions, difficulty, cuisine].some((field) => field?.trim() === '')) {
         throw new ApiError(400, 'All fields are required');
     }
 
@@ -20,122 +20,127 @@ const createRecipe = asyncHandler(async (req, res) => {
         throw new ApiError(400, 'At least one recipe image is required');
     }
 
-    let imageUrls = [];
-    try {
-        const imagesLocalPaths = imageFiles.map((file) => file.path);
-        const uploadPromises = imagesLocalPaths.map((path) => uploadOnCloudinary(path));
-        const imageResponses = await Promise.all(uploadPromises);
-
-        imageUrls = imageResponses.filter((img) => img !== null).map((img) => img.url);
-
-        if (imageUrls.length === 0) throw new Error('All image uploads failed');
-    } catch (error) {
-        console.error('Image Upload Failed:', error);
-        throw new ApiError(500, 'Failed to upload images');
-    }
+    const imagesLocalPaths = imageFiles.map((file) => file.path);
+    const uploadPromises = imagesLocalPaths.map((path) => uploadOnCloudinary(path));
+    const imageResponses = await Promise.all(uploadPromises);
+    const imageUrls = imageResponses.filter((img) => img !== null).map((img) => img.url);
 
     let videoUrl = '';
-    const videoFile = req.files?.video?.[0];
-
-    if (videoFile) {
-        try {
-            console.log('Attempting to upload video:', videoFile.path);
-            const videoResponse = await uploadOnCloudinary(videoFile.path);
-
-            if (videoResponse) {
-                videoUrl = videoResponse.url;
-                console.log('Video uploaded successfully:', videoUrl);
-            } else {
-                console.error('Video upload returned null (check Cloudinary logs)');
-            }
-        } catch (error) {
-            console.error('Video Upload Critical Fail:', error);
-        }
+    if (req.files?.video?.[0]) {
+        const videoResponse = await uploadOnCloudinary(req.files.video[0].path);
+        if (videoResponse) videoUrl = videoResponse.url;
     }
 
-    const ingredientsArray = Array.isArray(ingredients) ? ingredients : ingredients.split(',').map((i) => i.trim());
+    let videoThumbnail = '';
+    if (req.files?.videoThumbnail?.[0]) {
+        const thumbResponse = await uploadOnCloudinary(req.files.videoThumbnail[0].path);
+        if (thumbResponse) videoThumbnail = thumbResponse.url;
+    } else if (videoUrl) {
+        // If no thumbnail provided but video exists, use first image as fallback or Cloudinary auto-thumbnail
+        // Here we just default to empty string, frontend will handle fallback to recipe image[0]
+    }
 
-    let parsedCookingTime = parseInt(cookingTime);
-    if (isNaN(parsedCookingTime)) parsedCookingTime = 30;
-
-    let parsedCalories = parseInt(calories);
-    if (isNaN(parsedCalories)) parsedCalories = 0;
-
-    const parsedTags = dietaryTags ? (Array.isArray(dietaryTags) ? dietaryTags : dietaryTags.split(',')) : [];
+    const ingredientsArray = Array.isArray(ingredients) ? ingredients : ingredients.split(',');
 
     const recipe = await Recipe.create({
         title,
         description,
         ingredients: ingredientsArray,
-        mainIngredient: mainIngredient || ingredientsArray[0],
+        mainIngredient,
         instructions,
         difficulty,
         cuisine,
+        videoThumbnail,
         isPremium: isPremium === 'true',
         images: imageUrls,
-        videoUrl: videoUrl,
+        videoUrl,
         createdBy: req.user._id,
-        dietaryTags: parsedTags,
-        cookingTime: parsedCookingTime,
-        calories: parsedCalories,
+        dietaryTags: dietaryTags ? dietaryTags.split(',') : [],
+        cookingTime: parseInt(cookingTime) || 30,
+        calories: parseInt(calories) || 0,
+        viewedBy: [],
+        views: 0,
     });
 
     return res.status(201).json(new ApiResponse(201, recipe, 'Recipe created'));
 });
 
-
+// 2. GET SINGLE RECIPE (✅ FIXED: Smart View Counting)
 const getRecipeById = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const userId = req.user ? req.user._id : null;
+    const { id } = req.params;
+    const userId = req.user ? req.user._id : null;
 
-  const recipe = await Recipe.findById(id).populate('createdBy', 'username avatar about');
-  if (!recipe) {
-    throw new ApiError(404, 'Recipe not found');
-  }
+    let recipe = await Recipe.findById(id);
+    if (!recipe) throw new ApiError(404, 'Recipe not found');
 
-  let isLiked = false;
-  let isBookmarked = false;
+    // View Logic
+    if (userId) {
+        // Logged In: Check if unique
+        const alreadyViewed = recipe.viewedBy.includes(userId);
+        if (!alreadyViewed) {
+            // Increment view and add user ID
+            recipe = await Recipe.findByIdAndUpdate(
+                id,
+                {
+                    $push: { viewedBy: userId },
+                    $inc: { views: 1 },
+                },
+                { new: true },
+            ).populate('createdBy', 'username avatar about');
+        } else {
+            // Just fetch without incrementing
+            recipe = await Recipe.findById(id).populate('createdBy', 'username avatar about');
+        }
+    } else {
+        // Guest: Always increment
+        recipe = await Recipe.findByIdAndUpdate(id, { $inc: { views: 1 } }, { new: true }).populate('createdBy', 'username avatar about');
+    }
 
-  if (userId) {
-      const like = await Like.findOne({ recipe: id, likedBy: userId });
-      const bookmark = await Bookmark.findOne({ recipe: id, user: userId });
-      isLiked = !!like;
-      isBookmarked = !!bookmark;
-  }
+    // Interactions
+    let isLiked = false;
+    let isBookmarked = false;
+    if (userId) {
+        const like = await Like.findOne({ recipe: id, likedBy: userId });
+        const bookmark = await Bookmark.findOne({ recipe: id, user: userId });
+        isLiked = !!like;
+        isBookmarked = !!bookmark;
+    }
+    const likesCount = await Like.countDocuments({ recipe: id });
 
-  const likesCount = await Like.countDocuments({ recipe: id });
+    // Premium Check
+    if (recipe.isPremium) {
+        if (!req.user || !req.user.isSubscriptionActive) {
+            return res.status(403).json(
+                new ApiResponse(
+                    403,
+                    {
+                        ...recipe.toObject(),
+                        instructions: 'Locked',
+                        isLiked,
+                        isBookmarked,
+                        likesCount,
+                    },
+                    'Premium Content',
+                ),
+            );
+        }
+    }
 
-  // --- PREMIUM ---
-  if (recipe.isPremium && (!req.user || !req.user.isSubscriptionActive)) {
-      return res.status(403).json(
-          new ApiResponse(
-              403,
-              {
-                  ...recipe.toObject(),
-                  instructions: 'Locked',
-                  isLiked, 
-                  isBookmarked, 
-              },
-              'Premium Content',
-          ),
-      );
-  }
-
-  return res.status(200).json(
-      new ApiResponse(
-          200,
-          {
-              ...recipe.toObject(),
-              isLiked,
-              isBookmarked, 
-          },
-          'Fetched',
-      ),
-  );
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                ...recipe.toObject(),
+                isLiked,
+                isBookmarked,
+                likesCount,
+            },
+            'Fetched',
+        ),
+    );
 });
 
-
-
+// 3. GET ALL RECIPES (✅ Return explicit 'views' field)
 const getAllRecipes = asyncHandler(async (req, res) => {
     const { search, cuisine, mainIngredient, sort } = req.query;
     const page = parseInt(req.query.page) || 1;
@@ -153,26 +158,18 @@ const getAllRecipes = asyncHandler(async (req, res) => {
     else if (sort === 'name_desc') sortOptions = { title: -1 };
     else if (sort === 'oldest') sortOptions = { createdAt: 1 };
 
-    // Fetch recipes
     let recipes = await Recipe.find(query).sort(sortOptions).skip(skip).limit(limit).select('-instructions -videoUrl').populate('createdBy', 'username avatar').lean();
 
-    // ✅ NEW: Efficiently fetch likes count and user status
     const recipeIds = recipes.map((r) => r._id);
 
-    // 1. Count likes for all fetched recipes
-    // Using aggregation is faster than looping find()
     const likeCounts = await Like.aggregate([{ $match: { recipe: { $in: recipeIds } } }, { $group: { _id: '$recipe', count: { $sum: 1 } } }]);
-
-    // Convert array to map for O(1) lookup
     const likeMap = {};
     likeCounts.forEach((item) => {
         likeMap[item._id.toString()] = item.count;
     });
 
-    // 2. Check user status
     let likedRecipeIds = new Set();
     let bookmarkedRecipeIds = new Set();
-
     if (userId) {
         const userLikes = await Like.find({ recipe: { $in: recipeIds }, likedBy: userId });
         const userBookmarks = await Bookmark.find({ recipe: { $in: recipeIds }, user: userId });
@@ -180,12 +177,12 @@ const getAllRecipes = asyncHandler(async (req, res) => {
         bookmarkedRecipeIds = new Set(userBookmarks.map((b) => b.recipe.toString()));
     }
 
-    // 3. Merge data
     recipes = recipes.map((recipe) => ({
         ...recipe,
-        likesCount: likeMap[recipe._id.toString()] || 0, // Default 0
+        likesCount: likeMap[recipe._id.toString()] || 0,
         isLiked: likedRecipeIds.has(recipe._id.toString()),
         isBookmarked: bookmarkedRecipeIds.has(recipe._id.toString()),
+        // No change needed here if 'views' is in DB, .lean() returns it automatically
     }));
 
     const total = await Recipe.countDocuments(query);
@@ -199,40 +196,21 @@ const getAllRecipes = asyncHandler(async (req, res) => {
                 totalPages: Math.ceil(total / limit),
                 totalRecipes: total,
             },
-            'Recipes fetched',
+            'Fetched',
         ),
     );
 });
 
+// 4. DELETE RECIPE
+const deleteRecipe = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const recipe = await Recipe.findById(id);
+    if (!recipe) throw new ApiError(404, 'Recipe not found');
+    if (recipe.createdBy.toString() !== req.user._id.toString()) throw new ApiError(403, 'Unauthorized');
 
-const deleteRecipe = asyncHandler(async(req, res)=> {
-  const {id} = req.params;
-  const recipe = await Recipe.findById(id);
+    await Promise.all([Like.deleteMany({ recipe: id }), Review.deleteMany({ recipe: id }), Bookmark.deleteMany({ recipe: id })]);
+    await Recipe.findByIdAndDelete(id);
+    return res.status(200).json(new ApiResponse(200, {}, 'Deleted'));
+});
 
-  if(!recipe) {
-    throw new ApiError(404, "Recipe not found");
-  }
-
-  if(recipe.createdBy.toString() !== req.user._id.toString()){
-    throw new ApiError(403, "You are not allowed to delete this recipe");
-  }
-
-  await Promise.all([
-    Like.deleteMany({recipe: id}),
-    Review.deleteMany({recipe: id}),
-    Bookmark.deleteMany({ recipe: id})
-  ]);
-
-  await Recipe.findByIdAndDelete(id);
-
-  return res.status(200).json(
-    new ApiResponse(200, {}, "Recipe and all  associated data deleted successfully")
-  );
-})
-
-export { 
-  createRecipe, 
-  getRecipeById, 
-  getAllRecipes,
-  deleteRecipe 
-};
+export { createRecipe, getRecipeById, getAllRecipes, deleteRecipe };

@@ -13,12 +13,13 @@ router.route('/:id')
   .delete(verifyJWT, deleteRecipe);
 
 router.route('/').post(
-  verifyJWT,
-  upload.fields([
-    { name: 'images', maxCount: 10 },
-    { name: 'video', maxCount: 1 },
-  ]),
-  createRecipe,
+    verifyJWT,
+    upload.fields([
+        { name: 'images', maxCount: 10 },
+        { name: 'video', maxCount: 1 },
+        { name: 'videoThumbnail', maxCount: 1 },
+    ]),
+    createRecipe,
 );
 
 export default router;

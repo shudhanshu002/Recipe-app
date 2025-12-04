@@ -29,14 +29,16 @@ const handleSocialLogin = asyncHandler(async (req, res) => {
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
 
+
+
     user.accessToken = accessToken;
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
 
     const options = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production', // False in dev
+        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     };
 
     return res.status(200).cookie('accessToken', accessToken, options).cookie('refreshToken', refreshToken, options).redirect('http://localhost:5173');
@@ -155,7 +157,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const options = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
     };
 
     return res
@@ -304,4 +306,35 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, user, 'Cover Image uploaded successfully'));
 });
 
-export { registerUser, loginUser, verifyUserOtp, logoutUser, handleSocialLogin, refreshAccessToken, updateUserAvatar, updateAccountDetails, updateUserCoverImage };
+
+const getTopChefs = asyncHandler(async (req, res) => {
+    const users = await User.aggregate([
+        {
+            $lookup: {
+                from: 'subscriptions',
+                localField: '_id',
+                foreignField: 'channel',
+                as: 'subscribers',
+            },
+        },
+        {
+            $addFields: {
+                subscribersCount: { $size: '$subscribers' },
+            },
+        },
+        { $sort: { subscribersCount: -1 } },
+        { $limit: 20 },
+        {
+            $project: {
+                username: 1,
+                avatar: 1,
+                title: 1,
+                subscribersCount: 1,
+            },
+        },
+    ]);
+
+    return res.status(200).json(new ApiResponse(200, users, 'Community fetched'));
+});
+
+export { registerUser, loginUser, verifyUserOtp, logoutUser, handleSocialLogin, refreshAccessToken, updateUserAvatar, updateAccountDetails, updateUserCoverImage, getTopChefs };
