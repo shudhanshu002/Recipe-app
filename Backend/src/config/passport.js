@@ -4,10 +4,8 @@ import { Strategy as FacebookStrategy } from 'passport-facebook';
 import { User } from '../models/user.model.js';
 import dotenv from 'dotenv';
 
-// ✅ Load env variables immediately
 dotenv.config();
 
-// Helper to handle the logic for both Google and Facebook
 const socialLoginCallback = async (accessToken, refreshToken, profile, done) => {
     try {
         const email = profile.emails?.[0]?.value;
@@ -46,21 +44,29 @@ const socialLoginCallback = async (accessToken, refreshToken, profile, done) => 
     }
 };
 
-// --- GOOGLE STRATEGY ---
+// --- DEBUGGING: Verify the exact URL being used ---
+// If .env is missing, it defaults to the string below.
+const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/api/v1/users/google/callback';
+
+console.log('---------------------------------------------------');
+console.log('🔵 GOOGLE STRATEGY CONFIG');
+console.log('🔵 Client ID:', process.env.GOOGLE_CLIENT_ID ? 'Loaded' : 'MISSING');
+console.log('🔵 Callback URL:', GOOGLE_CALLBACK_URL);
+console.log('---------------------------------------------------');
+
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     passport.use(
         new GoogleStrategy(
             {
                 clientID: process.env.GOOGLE_CLIENT_ID,
                 clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-                callbackURL: '/api/v1/users/google/callback',
+                callbackURL: GOOGLE_CALLBACK_URL,
             },
             socialLoginCallback,
         ),
     );
 }
 
-// --- FACEBOOK STRATEGY ---
 if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
     passport.use(
         new FacebookStrategy(
