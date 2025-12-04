@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Upload, Plus, X, Video, Trash2 } from 'lucide-react';
+import { Loader2, Upload, Plus, X, Video, Trash2, Image as ImageIcon } from 'lucide-react';
 import { recipeApi } from '../api/recipes';
 import Input from '../components/Input';
 import useThemeStore from '../store/useThemeStore';
+import RichTextEditor from '../components/RichTextEditor'; // ✅ Import Rich Text Editor
 
 const CUISINES = [
     'Italian',
@@ -43,15 +44,18 @@ const CreateRecipe = () => {
     // Video state
     const [video, setVideo] = useState(null);
     const [videoPreview, setVideoPreview] = useState(null);
+    const [videoThumbnail, setVideoThumbnail] = useState(null); // ✅ Thumbnail State
+    const [thumbnailPreview, setThumbnailPreview] = useState(null);
 
+    // We use setValue to manually update the 'instructions' field from the RichEditor
     const {
         register,
         handleSubmit,
         watch,
+        setValue,
         formState: { errors },
     } = useForm();
 
-    // Watch the cuisine dropdown to conditionally show the input
     const selectedCuisine = watch('cuisine');
 
     // --- Ingredient Handlers ---
@@ -79,12 +83,20 @@ const CreateRecipe = () => {
         });
     };
 
-    // --- Video Handler ---
+    // --- Video Handlers ---
     const handleVideoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             setVideo(file);
             setVideoPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleThumbnailChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setVideoThumbnail(file);
+            setThumbnailPreview(URL.createObjectURL(file));
         }
     };
 
@@ -97,17 +109,19 @@ const CreateRecipe = () => {
             // Basic Fields
             formData.append('title', data.title);
             formData.append('description', data.description);
-            formData.append('instructions', data.instructions);
+
+            // ✅ Instructions from RichTextEditor
+            // If user hasn't typed anything, data.instructions might be undefined, handle that
+            formData.append('instructions', data.instructions || '');
+
             formData.append('difficulty', data.difficulty);
             formData.append('mainIngredient', data.mainIngredient);
             formData.append('cookingTime', data.cookingTime);
             formData.append('isPremium', data.isPremium);
 
-            // ✅ CRITICAL FIX: Handle Custom Cuisine Logic
+            // Custom Cuisine Logic
             let finalCuisine = data.cuisine;
-
             if (finalCuisine === 'Other') {
-                // If user selected "Other", use the text from the custom input
                 if (!data.customCuisine || data.customCuisine.trim() === '') {
                     alert('Please type the name of the cuisine.');
                     setIsLoading(false);
@@ -115,8 +129,6 @@ const CreateRecipe = () => {
                 }
                 finalCuisine = data.customCuisine.trim();
             }
-
-            // Send the actual name (e.g. "Peruvian"), NEVER "Other"
             formData.append('cuisine', finalCuisine);
 
             // Arrays
@@ -125,7 +137,9 @@ const CreateRecipe = () => {
             });
 
             images.forEach((image) => formData.append('images', image));
+
             if (video) formData.append('video', video);
+            if (videoThumbnail) formData.append('videoThumbnail', videoThumbnail);
 
             await recipeApi.create(formData);
             navigate('/');
@@ -150,13 +164,14 @@ const CreateRecipe = () => {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className={`space-y-8 p-8 rounded-xl shadow-sm border ${cardBg}`}>
+                {/* Title & Main Ingredient */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input label="Recipe Title" placeholder="Spicy Chicken" {...register('title', { required: true })} />
                     <Input label="Main Ingredient" placeholder="Chicken" {...register('mainIngredient', { required: true })} />
                 </div>
 
+                {/* Meta Data */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Cuisine Dropdown */}
                     <div className="flex flex-col gap-1">
                         <label className={`text-sm font-medium ${labelColor}`}>Cuisine</label>
                         <select {...register('cuisine')} className={`w-full px-4 py-2 rounded-lg border ${inputBg}`}>
@@ -167,7 +182,6 @@ const CreateRecipe = () => {
                             ))}
                         </select>
                     </div>
-
                     <div className="flex flex-col gap-1">
                         <label className={`text-sm font-medium ${labelColor}`}>Difficulty</label>
                         <select {...register('difficulty')} className={`w-full px-4 py-2 rounded-lg border ${inputBg}`}>
@@ -179,26 +193,20 @@ const CreateRecipe = () => {
                     <Input label="Time (mins)" type="number" {...register('cookingTime')} />
                 </div>
 
-                {/* ✅ CONDITIONAL INPUT: Shows only if "Other" is selected */}
+                {/* Custom Cuisine Input */}
                 {selectedCuisine === 'Other' && (
                     <div className="animate-in fade-in slide-in-from-top-2">
-                        <Input
-                            label="Type Cuisine Name"
-                            placeholder="e.g. Peruvian"
-                            {...register('customCuisine', {
-                                required: selectedCuisine === 'Other' ? 'Please specify the cuisine' : false,
-                            })}
-                            error={errors.customCuisine}
-                        />
+                        <Input label="Specify Cuisine Name" placeholder="e.g. Peruvian" {...register('customCuisine', { required: selectedCuisine === 'Other' })} />
                     </div>
                 )}
 
+                {/* Description */}
                 <div className="flex flex-col gap-1">
                     <label className={`text-sm font-medium ${labelColor}`}>Description</label>
                     <textarea rows="3" className={`w-full px-4 py-2 rounded-lg border focus:outline-none ${inputBg}`} {...register('description', { required: true })} />
                 </div>
 
-                {/* Ingredients */}
+                {/* Ingredients List */}
                 <div>
                     <label className={`text-sm font-medium mb-2 block ${labelColor}`}>Ingredients</label>
                     <div className="space-y-3">
@@ -206,7 +214,7 @@ const CreateRecipe = () => {
                             <div key={i} className="flex gap-2">
                                 <input value={ing} onChange={(e) => handleIngredientChange(i, e.target.value)} className={`flex-1 px-4 py-2 rounded-lg border ${inputBg}`} />
                                 <button type="button" onClick={() => handleRemoveIngredient(i)} className="p-2 text-red-500">
-                                    <X size={20} />
+                                    <Trash2 size={20} />
                                 </button>
                             </div>
                         ))}
@@ -216,20 +224,20 @@ const CreateRecipe = () => {
                     </div>
                 </div>
 
-                {/* Instructions */}
-                <div className="flex flex-col gap-1">
-                    <label className={`text-sm font-medium ${labelColor}`}>Instructions</label>
-                    <textarea rows="6" className={`w-full px-4 py-2 rounded-lg border focus:outline-none ${inputBg}`} {...register('instructions', { required: true })} />
+                {/* ✅ INSTRUCTIONS (RICH TEXT EDITOR) */}
+                <div>
+                    <label className={`text-sm font-medium mb-2 block ${labelColor}`}>Instructions</label>
+                    {/* Use Controller logic via manual onChange to hook into react-hook-form */}
+                    <RichTextEditor content={watch('instructions')} onChange={(html) => setValue('instructions', html)} />
                 </div>
 
-                {/* Images */}
+                {/* Image Upload */}
                 <div>
                     <label className={`text-sm font-medium mb-2 block ${labelColor}`}>Images</label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {previewUrls.map((url, i) => (
                             <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border dark:border-gray-700">
                                 <img src={url} className="w-full h-full object-cover" alt="preview" />
-                                {/* ✅ Remove Button */}
                                 <button
                                     type="button"
                                     onClick={() => handleRemoveImage(i)}
@@ -251,32 +259,64 @@ const CreateRecipe = () => {
                     </div>
                 </div>
 
-                {/* Video */}
-                <div>
-                    <label className={`text-sm font-medium mb-2 block ${labelColor}`}>Video (Optional)</label>
-                    <div className={`p-4 border-2 border-dashed rounded-xl text-center ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
-                        {videoPreview ? (
-                            <div className="relative w-full max-w-sm mx-auto">
-                                <video src={videoPreview} controls className="rounded-lg w-full" />
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setVideo(null);
-                                        setVideoPreview(null);
-                                    }}
-                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                                >
-                                    <X size={14} />
-                                </button>
-                            </div>
-                        ) : (
-                            <label className="cursor-pointer block py-8 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors rounded-lg">
-                                <Video className="mx-auto text-gray-400 mb-2" size={32} />
-                                <span className={`text-sm ${labelColor}`}>Click to upload video</span>
-                                <input type="file" accept="video/*" className="hidden" onChange={handleVideoChange} />
-                            </label>
-                        )}
+                {/* Video Upload */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className={`text-sm font-medium mb-2 block ${labelColor}`}>Video (Optional)</label>
+                        <div className={`p-4 border-2 border-dashed rounded-xl text-center ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
+                            {videoPreview ? (
+                                <div className="relative w-full max-w-sm mx-auto">
+                                    <video src={videoPreview} controls className="rounded-lg w-full" />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setVideo(null);
+                                            setVideoPreview(null);
+                                        }}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <label className="cursor-pointer block py-8 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors rounded-lg">
+                                    <Video className="mx-auto text-gray-400 mb-2" size={32} />
+                                    <span className={`text-sm ${labelColor}`}>Click to upload video</span>
+                                    <input type="file" accept="video/*" className="hidden" onChange={handleVideoChange} />
+                                </label>
+                            )}
+                        </div>
                     </div>
+
+                    {/* ✅ Video Thumbnail Upload (Only if video exists) */}
+                    {video && (
+                        <div className="animate-in fade-in">
+                            <label className={`text-sm font-medium mb-2 block ${labelColor}`}>Video Thumbnail (Optional)</label>
+                            <div className={`p-4 border-2 border-dashed rounded-xl text-center ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
+                                {thumbnailPreview ? (
+                                    <div className="relative w-full max-w-sm mx-auto">
+                                        <img src={thumbnailPreview} className="rounded-lg w-full h-32 object-cover" alt="thumb" />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setVideoThumbnail(null);
+                                                setThumbnailPreview(null);
+                                            }}
+                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label className="cursor-pointer block py-8 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors rounded-lg">
+                                        <ImageIcon className="mx-auto text-gray-400 mb-2" size={32} />
+                                        <span className={`text-sm ${labelColor}`}>Upload Cover Image</span>
+                                        <input type="file" accept="image/*" className="hidden" onChange={handleThumbnailChange} />
+                                    </label>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
@@ -284,7 +324,7 @@ const CreateRecipe = () => {
                     <label className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Mark as Premium</label>
                 </div>
 
-                <button type="submit" disabled={isLoading} className="w-full py-3 bg-orange-500 text-white font-bold rounded-lg flex items-center justify-center gap-2">
+                <button type="submit" disabled={isLoading} className="w-full py-3 bg-primary text-white font-bold rounded-lg flex items-center justify-center gap-2">
                     {isLoading ? <Loader2 className="animate-spin" /> : 'Publish Recipe'}
                 </button>
             </form>
