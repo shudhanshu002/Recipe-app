@@ -1,13 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Home, PlusSquare, Calendar, ShoppingCart, BookOpen, LogOut, Sun, Moon, LogIn, User, Bell, Crown, ChevronDown } from 'lucide-react';
+import { Home, PlusSquare, Calendar, ShoppingCart, Heart, LogOut, Settings, User, Crown, ChevronDown, BookOpen, LogIn, Sun, Moon, Bell } from 'lucide-react';
 import useAuthStore from '../store/useAuthStore';
 import useThemeStore from '../store/useThemeStore';
+import useNotificationStore from '../store/useNotificationStore'; // ✅ Import new store
 import { authApi } from '../api/auth';
 
 const Navbar = () => {
     const { user, logout } = useAuthStore();
     const { isDarkMode, toggleTheme } = useThemeStore();
+
+    // ✅ Use Global Notification Store
+    const { unreadCount, fetchUnreadCount } = useNotificationStore();
+
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
@@ -21,6 +26,13 @@ const Navbar = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // ✅ Fetch count on mount if user exists
+    useEffect(() => {
+        if (user) {
+            fetchUnreadCount();
+        }
+    }, [user]);
 
     const handleLogout = async () => {
         try {
@@ -42,10 +54,11 @@ const Navbar = () => {
     ];
 
     const navBg = isDarkMode ? 'bg-[#1e1e1e] border-gray-700' : 'bg-white border-gray-200';
-    const textPrimary = isDarkMode ? 'text-white' : 'text-gray-900';
     const textSecondary = isDarkMode ? 'text-gray-400' : 'text-gray-600';
     const hoverBg = isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50';
+    const activeClass = 'text-primary';
     const dropdownBg = isDarkMode ? 'bg-[#1e1e1e] border-gray-700' : 'bg-white border-gray-200';
+    const textPrimary = isDarkMode ? 'text-white' : 'text-gray-900';
 
     return (
         <header className={`fixed top-0 left-0 w-full h-16 border-b z-50 transition-colors duration-300 ${navBg}`}>
@@ -63,7 +76,7 @@ const Navbar = () => {
                             key={item.name}
                             to={item.path}
                             className={({ isActive }) =>
-                                `flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 font-medium text-sm ${isActive ? 'text-primary' : `${textSecondary} ${hoverBg}`}`
+                                `flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 font-medium text-sm ${isActive ? activeClass : `${textSecondary} ${hoverBg}`}`
                             }
                         >
                             {item.icon}
@@ -73,6 +86,18 @@ const Navbar = () => {
                 </nav>
 
                 <div className="flex items-center gap-3">
+                    {/* Notification Bell with Live Count */}
+                    {user && (
+                        <Link to="/notifications" className={`relative p-2 rounded-lg transition-colors ${textSecondary} ${hoverBg}`} title="Notifications">
+                            <Bell size={20} />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white dark:ring-[#1e1e1e]">
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                </span>
+                            )}
+                        </Link>
+                    )}
+
                     <button onClick={toggleTheme} className={`p-2 rounded-lg transition-colors ${textSecondary} ${hoverBg}`}>
                         {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
                     </button>
@@ -88,22 +113,27 @@ const Navbar = () => {
                                 <img src={user.avatar || 'https://via.placeholder.com/40'} alt="User" className="w-8 h-8 rounded-full object-cover" />
                                 <ChevronDown size={16} className={textSecondary} />
                             </button>
+
                             {showDropdown && (
                                 <div className={`absolute right-0 top-12 w-56 rounded-xl shadow-xl border py-2 animate-in fade-in slide-in-from-top-2 ${dropdownBg}`}>
                                     <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 mb-2">
                                         <p className={`text-sm font-bold ${textPrimary}`}>{user.username}</p>
+                                        <p className={`text-xs ${textSecondary} truncate`}>{user.email}</p>
                                     </div>
-                                    <Link to={`/profile/${user.username}`} onClick={() => setShowDropdown(false)} className={`flex items-center gap-2 px-4 py-2 text-sm ${textSecondary} ${hoverBg}`}>
+                                    <Link to={`/profile/${user.username}`} className={`flex items-center gap-2 px-4 py-2 text-sm ${textSecondary} ${hoverBg}`} onClick={() => setShowDropdown(false)}>
                                         <User size={16} /> Profile
                                     </Link>
-                                    {/* Quick Link to Create Blog */}
-                                    <Link to="/create-blog" onClick={() => setShowDropdown(false)} className={`flex items-center gap-2 px-4 py-2 text-sm ${textSecondary} ${hoverBg}`}>
-                                        <PlusSquare size={16} /> Write Blog
-                                    </Link>
-                                    <Link to="/settings" onClick={() => setShowDropdown(false)} className={`flex items-center gap-2 px-4 py-2 text-sm ${textSecondary} ${hoverBg}`}>
-                                        <User size={16} /> Settings
+                                    <Link to="/settings" className={`flex items-center gap-2 px-4 py-2 text-sm ${textSecondary} ${hoverBg}`} onClick={() => setShowDropdown(false)}>
+                                        <Settings size={16} /> Settings
                                     </Link>
                                     <div className="my-1 border-t border-gray-100 dark:border-gray-800"></div>
+                                    <Link
+                                        to="/premium-recipes"
+                                        className={`flex items-center gap-2 px-4 py-2 text-sm text-yellow-600 dark:text-yellow-500 ${hoverBg}`}
+                                        onClick={() => setShowDropdown(false)}
+                                    >
+                                        <Crown size={16} /> Premium Recipes
+                                    </Link>
                                     <button onClick={handleLogout} className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-left`}>
                                         <LogOut size={16} /> Log Out
                                     </button>
@@ -111,13 +141,14 @@ const Navbar = () => {
                             )}
                         </div>
                     ) : (
-                        <NavLink to="/login" className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-orange-600 transition font-medium text-sm">
+                        <Link to="/login" className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-orange-600 transition text-sm flex items-center gap-2">
                             <LogIn size={18} /> Login
-                        </NavLink>
+                        </Link>
                     )}
                 </div>
             </div>
         </header>
     );
 };
+
 export default Navbar;

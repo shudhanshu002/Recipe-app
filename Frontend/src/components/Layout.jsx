@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
+import AIChatbot from '../pages/AIChatbot';
 import useThemeStore from '../store/useThemeStore';
 
 const Layout = () => {
@@ -28,6 +29,7 @@ const Layout = () => {
                     <Outlet />
                 </div>
             </main>
+            <AIChatbot/>
         </div>
     );
 };

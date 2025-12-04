@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, Star, Lock, X, Maximize2 } from 'lucide-react';
+import { Clock, Star, Lock, X, Maximize2, User } from 'lucide-react';
 import { recipeApi } from '../api/recipes';
 import useThemeStore from '../store/useThemeStore';
 
@@ -17,10 +17,12 @@ const RecipeDetailPanel = ({ recipeId, onClose }) => {
             setLoading(true);
             setIsLocked(false);
             try {
+                // Fetching this triggers the view increment on the backend automatically
                 const data = await recipeApi.getOne(recipeId);
                 setRecipe(data);
             } catch (err) {
                 if (err.response?.status === 403) {
+                    // If premium content, backend sends partial data in error response
                     setRecipe(err.response?.data?.data);
                     setIsLocked(true);
                 }
@@ -36,6 +38,7 @@ const RecipeDetailPanel = ({ recipeId, onClose }) => {
     const textColor = isDarkMode ? 'text-white' : 'text-gray-900';
     const subText = isDarkMode ? 'text-gray-400' : 'text-gray-600';
     const iconHover = isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100';
+    const tagBg = isDarkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-700';
 
     if (!recipeId) return null;
 
@@ -54,12 +57,13 @@ const RecipeDetailPanel = ({ recipeId, onClose }) => {
                 </div>
             </div>
 
-            {/* Content */}
+            {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                 {loading ? (
                     <div className={`text-center py-20 ${subText}`}>Loading details...</div>
                 ) : recipe ? (
                     <div className="space-y-6">
+                        {/* Image & Lock Overlay */}
                         <div className="aspect-video w-full rounded-xl overflow-hidden relative bg-gray-200">
                             <img src={recipe.images?.[0]} alt={recipe.title} className="w-full h-full object-cover" />
                             {isLocked && (
@@ -70,27 +74,30 @@ const RecipeDetailPanel = ({ recipeId, onClose }) => {
                             )}
                         </div>
 
-
+                        {/* Header Info */}
                         <div>
                             <h2 className={`text-2xl font-bold leading-tight ${textColor}`}>{recipe.title}</h2>
 
-
+                            {/* ✅ Clickable Author Link */}
                             <Link to={`/profile/${recipe.createdBy?.username}`} className="inline-flex items-center gap-2 mt-2 hover:opacity-80 transition-opacity group">
                                 <img src={recipe.createdBy?.avatar || 'https://via.placeholder.com/30'} className="w-6 h-6 rounded-full object-cover" alt="chef" />
                                 <span className={`text-sm font-medium group-hover:text-primary ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{recipe.createdBy?.username}</span>
                             </Link>
 
-                            <div className={`flex items-center gap-4 text-sm mt-3 ${subText}`}>
+                            {/* Meta Tags */}
+                            <div className={`flex flex-wrap items-center gap-4 text-sm mt-3 ${subText}`}>
                                 <div className="flex items-center gap-1">
                                     <Clock size={16} /> {recipe.cookingTime}m
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    <Star size={16} className="text-yellow-500" fill="currentColor" /> {recipe.averageRating?.toFixed(1)}
+                                    <Star size={16} className="text-yellow-500" fill="currentColor" />
+                                    {recipe.averageRating?.toFixed(1)}
                                 </div>
-                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>{recipe.difficulty}</span>
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${tagBg}`}>{recipe.difficulty}</span>
                             </div>
                         </div>
 
+                        {/* Description */}
                         <p className={`text-sm leading-relaxed ${subText}`}>{recipe.description}</p>
 
                         {/* Ingredients Preview */}
@@ -103,11 +110,32 @@ const RecipeDetailPanel = ({ recipeId, onClose }) => {
                                         {ing}
                                     </li>
                                 ))}
+                                {recipe.ingredients?.length > 5 && <li className={`text-xs italic pl-4 ${subText}`}>+ {recipe.ingredients.length - 5} more...</li>}
                             </ul>
                         </div>
+
+                        {/* Instructions Preview */}
+                        <div>
+                            <h3 className={`font-bold mb-3 ${textColor}`}>Instructions</h3>
+                            {isLocked ? (
+                                <div className={`p-6 rounded-xl text-center border-2 border-dashed ${isDarkMode ? 'border-gray-800 bg-gray-900/50' : 'border-gray-200 bg-gray-50'}`}>
+                                    <p className={`text-sm mb-3 ${subText}`}>Instructions are locked for this Premium recipe.</p>
+                                    <Link to="/subscription" className="text-primary text-sm font-bold hover:underline">
+                                        Upgrade to Unlock
+                                    </Link>
+                                </div>
+                            ) : (
+                                <p className={`text-sm whitespace-pre-wrap leading-relaxed line-clamp-6 ${subText}`}>{recipe.instructions}</p>
+                            )}
+                        </div>
+
+                        {/* Full View Button */}
+                        <Link to={`/recipes/${recipe._id}`} className="block w-full py-2.5 bg-primary text-white text-center font-bold rounded-xl hover:bg-orange-600 transition-colors shadow-md">
+                            View Full Recipe
+                        </Link>
                     </div>
                 ) : (
-                    <div className="text-center py-20">Recipe not found</div>
+                    <div className="text-center py-20 text-gray-500">Recipe not found</div>
                 )}
             </div>
         </div>
