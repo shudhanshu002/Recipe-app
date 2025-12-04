@@ -13,6 +13,7 @@ import mealPlanRouter from "./mealplan.routes.js";
 import shoppingListRouter from "./shoppinglist.routes.js"
 import shortRouter from './short.routes.js';
 import blogRouter from './blog.routes.js';
+import aiRouter from './ai.routes.js';
 
 
 import { upgradeToPremium } from "../controllers/payment.controller.js";
@@ -33,6 +34,7 @@ router.use("/mealplanner", mealPlanRouter);
 router.use("/shoppinglist", shoppingListRouter);
 router.use("/shorts", shortRouter);
 router.use('/blogs', blogRouter);
+router.use('/ai', aiRouter);
 // Payment
 router.post("/payment/subscribe", verifyJWT, upgradeToPremium);
 
