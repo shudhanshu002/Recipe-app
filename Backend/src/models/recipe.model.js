@@ -22,6 +22,7 @@ const recipeSchema = new mongoose.Schema(
         dietaryTags: { type: [String], index: true },
         cookingTime: { type: Number, default: 30 },
         calories: { type: Number },
+        isVegetarian: { type: Boolean, default: true, required: true },
 
         // ✅ TRACKING
         // 'viewedBy' tracks logged-in users to prevent duplicate counts

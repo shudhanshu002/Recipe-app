@@ -1,16 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Home, PlusSquare, Calendar, ShoppingCart, Heart, LogOut, Settings, User, Crown, ChevronDown, BookOpen, LogIn, Sun, Moon, Bell } from 'lucide-react';
+import { Home, PlusSquare, Calendar, ShoppingCart, Heart, LogOut, Settings, User, Crown, ChevronDown, BookOpen, LogIn, Sun, Moon, Bell, CreditCard } from 'lucide-react';
+import { toast } from 'react-toastify'; // ✅ IMPORT TOAST
 import useAuthStore from '../store/useAuthStore';
 import useThemeStore from '../store/useThemeStore';
-import useNotificationStore from '../store/useNotificationStore'; // ✅ Import new store
+import useNotificationStore from '../store/useNotificationStore';
 import { authApi } from '../api/auth';
 
 const Navbar = () => {
     const { user, logout } = useAuthStore();
     const { isDarkMode, toggleTheme } = useThemeStore();
-
-    // ✅ Use Global Notification Store
     const { unreadCount, fetchUnreadCount } = useNotificationStore();
 
     const [showDropdown, setShowDropdown] = useState(false);
@@ -27,12 +26,11 @@ const Navbar = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // ✅ Fetch count on mount if user exists
     useEffect(() => {
         if (user) {
             fetchUnreadCount();
         }
-    }, [user]);
+    }, [user, fetchUnreadCount]);
 
     const handleLogout = async () => {
         try {
@@ -42,6 +40,22 @@ const Navbar = () => {
         } catch (error) {
             console.error('Logout failed', error);
         }
+    };
+
+    // ✅ NEW: Handle Dropdown Filter Clicks
+    const handleDropdownClick = (action) => {
+        if (action === 'premium-filter') {
+            // Navigate to Home with filter param
+            navigate('/?filter=premium');
+            toast.success('Displaying Premium Recipes Only', {
+                position: 'top-center',
+                autoClose: 2000,
+            });
+        } else if (action === 'all') {
+            // Reset filter
+            navigate('/?filter=all');
+        }
+        setShowDropdown(false);
     };
 
     const navItems = [
@@ -86,7 +100,6 @@ const Navbar = () => {
                 </nav>
 
                 <div className="flex items-center gap-3">
-                    {/* Notification Bell with Live Count */}
                     {user && (
                         <Link to="/notifications" className={`relative p-2 rounded-lg transition-colors ${textSecondary} ${hoverBg}`} title="Notifications">
                             <Bell size={20} />
@@ -110,30 +123,74 @@ const Navbar = () => {
                                     isDarkMode ? 'border-gray-700 hover:bg-gray-800' : 'border-gray-200 hover:bg-gray-50'
                                 }`}
                             >
-                                <img src={user.avatar || 'https://via.placeholder.com/40'} alt="User" className="w-8 h-8 rounded-full object-cover" />
+                                <div className="relative">
+                                    <img src={user.avatar || 'https://via.placeholder.com/40'} alt="User" className="w-8 h-8 rounded-full object-cover" />
+                                    {/* Small Crown Badge on Avatar if Premium */}
+                                    {user.isPremium && (
+                                        <div className="absolute -top-1 -right-1 bg-yellow-400 rounded-full p-[2px] border-2 border-white dark:border-[#1e1e1e]">
+                                            <Crown size={8} className="text-white fill-white" />
+                                        </div>
+                                    )}
+                                </div>
                                 <ChevronDown size={16} className={textSecondary} />
                             </button>
 
                             {showDropdown && (
-                                <div className={`absolute right-0 top-12 w-56 rounded-xl shadow-xl border py-2 animate-in fade-in slide-in-from-top-2 ${dropdownBg}`}>
+                                <div className={`absolute right-0 top-12 w-60 rounded-xl shadow-xl border py-2 animate-in fade-in slide-in-from-top-2 ${dropdownBg}`}>
                                     <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 mb-2">
-                                        <p className={`text-sm font-bold ${textPrimary}`}>{user.username}</p>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <p className={`text-sm font-bold ${textPrimary} truncate max-w-[150px]`}>{user.username}</p>
+                                            {user.isPremium && (
+                                                <span className="flex items-center gap-1 text-[10px] font-bold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 px-1.5 py-0.5 rounded-full border border-yellow-200 dark:border-yellow-800">
+                                                    <Crown size={10} className="fill-current" /> PRO
+                                                </span>
+                                            )}
+                                        </div>
                                         <p className={`text-xs ${textSecondary} truncate`}>{user.email}</p>
                                     </div>
+
                                     <Link to={`/profile/${user.username}`} className={`flex items-center gap-2 px-4 py-2 text-sm ${textSecondary} ${hoverBg}`} onClick={() => setShowDropdown(false)}>
                                         <User size={16} /> Profile
                                     </Link>
                                     <Link to="/settings" className={`flex items-center gap-2 px-4 py-2 text-sm ${textSecondary} ${hoverBg}`} onClick={() => setShowDropdown(false)}>
                                         <Settings size={16} /> Settings
                                     </Link>
+
                                     <div className="my-1 border-t border-gray-100 dark:border-gray-800"></div>
-                                    <Link
-                                        to="/premium-recipes"
-                                        className={`flex items-center gap-2 px-4 py-2 text-sm text-yellow-600 dark:text-yellow-500 ${hoverBg}`}
-                                        onClick={() => setShowDropdown(false)}
-                                    >
-                                        <Crown size={16} /> Premium Recipes
-                                    </Link>
+
+                                    {/* --- Premium Section Update --- */}
+                                    {user.isPremium ? (
+                                        <>
+                                            {/* ✅ ADDED: Option to view All Recipes */}
+                                            <button onClick={() => handleDropdownClick('all')} className={`w-full flex items-center gap-2 px-4 py-2 text-sm ${textSecondary} ${hoverBg} text-left`}>
+                                                <Home size={16} /> All Recipes
+                                            </button>
+
+                                            {/* ✅ MODIFIED: Filters for Premium instead of navigating away */}
+                                            <button
+                                                onClick={() => handleDropdownClick('premium-filter')}
+                                                className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-yellow-600 dark:text-yellow-500 ${hoverBg} text-left`}
+                                            >
+                                                <Crown size={16} /> Premium Content
+                                            </button>
+
+                                            <Link to="/subscription" className={`flex items-center gap-2 px-4 py-2 text-sm ${textSecondary} ${hoverBg}`} onClick={() => setShowDropdown(false)}>
+                                                <CreditCard size={16} /> Manage Subscription
+                                            </Link>
+                                        </>
+                                    ) : (
+                                        <Link
+                                            to="/subscription"
+                                            className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/10 hover:bg-yellow-100 dark:hover:bg-yellow-900/20 transition-colors mx-2 rounded-lg mb-1`}
+                                            onClick={() => setShowDropdown(false)}
+                                        >
+                                            <Crown size={16} className="fill-current animate-pulse" /> Upgrade to Premium
+                                        </Link>
+                                    )}
+                                    {/* ----------------------------- */}
+
+                                    <div className="my-1 border-t border-gray-100 dark:border-gray-800"></div>
+
                                     <button onClick={handleLogout} className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-left`}>
                                         <LogOut size={16} /> Log Out
                                     </button>

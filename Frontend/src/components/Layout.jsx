@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import AIChatbot from '../pages/AIChatbot';
 import useThemeStore from '../store/useThemeStore';
+import Footer from './Footer';
 
 const Layout = () => {
     const { theme } = useThemeStore();
@@ -30,6 +31,7 @@ const Layout = () => {
                 </div>
             </main>
             <AIChatbot/>
+            <Footer/>
         </div>
     );
 };

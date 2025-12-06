@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Upload, Plus, X, Video, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Upload, Plus, X, Video, Trash2, Image as ImageIcon, Leaf, Drumstick } from 'lucide-react';
 import { recipeApi } from '../api/recipes';
 import Input from '../components/Input';
 import useThemeStore from '../store/useThemeStore';
@@ -40,6 +40,7 @@ const CreateRecipe = () => {
     const [ingredients, setIngredients] = useState(['']);
     const [images, setImages] = useState([]);
     const [previewUrls, setPreviewUrls] = useState([]);
+    const [isVegetarian, setIsVegetarian] = useState(true);
 
     // Video state
     const [video, setVideo] = useState(null);
@@ -118,6 +119,8 @@ const CreateRecipe = () => {
             formData.append('mainIngredient', data.mainIngredient);
             formData.append('cookingTime', data.cookingTime);
             formData.append('isPremium', data.isPremium);
+            formData.append('isVegetarian', isVegetarian);
+            formData.append('calories', data.calories);
 
             // Custom Cuisine Logic
             let finalCuisine = data.cuisine;
@@ -170,6 +173,31 @@ const CreateRecipe = () => {
                     <Input label="Main Ingredient" placeholder="Chicken" {...register('mainIngredient', { required: true })} />
                 </div>
 
+                <div className="flex flex-col gap-2">
+                    <label className={`text-sm font-medium ${labelColor}`}>Dietary Type</label>
+                    <div className="flex gap-4">
+                        <button
+                            type="button"
+                            onClick={() => setIsVegetarian(true)}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border transition-all ${
+                                isVegetarian ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : `${inputBg}`
+                            }`}
+                        >
+                            <Leaf size={18} /> Veg
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setIsVegetarian(false)}
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border transition-all ${
+                                !isVegetarian ? 'border-red-500 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400' : `${inputBg}`
+                            }`}
+                        >
+                            <Drumstick size={18} /> Non-Veg
+                        </button>
+                    </div>
+                </div>
+
                 {/* Meta Data */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="flex flex-col gap-1">
@@ -191,6 +219,8 @@ const CreateRecipe = () => {
                         </select>
                     </div>
                     <Input label="Time (mins)" type="number" {...register('cookingTime')} />
+                    {/* ✅ CALORIES INPUT */}
+                    <Input label="Calories (kcal)" type="number" placeholder="450" {...register('calories')} />
                 </div>
 
                 {/* Custom Cuisine Input */}

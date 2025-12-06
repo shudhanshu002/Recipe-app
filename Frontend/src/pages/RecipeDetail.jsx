@@ -23,6 +23,9 @@ import {
     CornerDownRight,
     ShoppingCart,
     Share2,
+    Leaf,
+    Drumstick,
+    Flame
 } from 'lucide-react';
 import { recipeApi } from '../api/recipes';
 import api from '../lib/axios';
@@ -547,7 +550,21 @@ const RecipeDetail = () => {
             {/* 2. Info */}
             <div className="space-y-4">
                 <div className="flex justify-between items-start">
-                    <h1 className={`text-4xl font-bold ${textColor}`}>{recipe?.title}</h1>
+                    <div>
+                        {/* ✅ NEW: Veg/Non-Veg Tag */}
+                        <div className="flex items-center gap-2 mb-2">
+                            {recipe.isVegetarian ? (
+                                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-green-700 bg-green-100 dark:text-green-400 dark:bg-green-900/30 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800">
+                                    <Leaf size={12} fill="currentColor" /> Vegetarian
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-700 bg-red-100 dark:text-red-400 dark:bg-red-900/30 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-800">
+                                    <Drumstick size={12} fill="currentColor" /> Non-Veg
+                                </span>
+                            )}
+                        </div>
+                        <h1 className={`text-4xl font-bold ${textColor}`}>{recipe?.title}</h1>
+                    </div>
                     <span className={`px-3 py-1 rounded-full border text-xs font-bold uppercase ${getDiffColor(recipe?.difficulty)}`}>{recipe?.difficulty}</span>
                 </div>
                 <p className={`text-lg leading-relaxed ${subText}`}>{recipe?.description}</p>
@@ -559,6 +576,13 @@ const RecipeDetail = () => {
                         <div className="flex items-center gap-2">
                             <Clock size={18} /> {formatTime(recipe?.cookingTime)}
                         </div>
+
+                        {recipe.calories > 0 && (
+                            <div className="flex items-center gap-2">
+                                <Flame size={18} className="text-orange-500" fill="currentColor" /> {recipe.calories} kcal
+                            </div>
+                        )}
+
                         <div className="flex items-center gap-2">
                             <Star size={18} className="text-yellow-500" fill="currentColor" /> {recipe?.averageRating?.toFixed(1)}
                         </div>

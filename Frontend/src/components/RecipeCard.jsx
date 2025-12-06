@@ -9,6 +9,17 @@ import useThemeStore from '../store/useThemeStore';
 import { formatTime, formatRelativeDate } from '../utils/formatDate';
 import ShareModal from './ShareModal';
 
+const DietBadge = ({ isVeg }) => {
+    const colorClass = isVeg ? 'border-green-600' : 'border-red-600';
+    const fillClass = isVeg ? 'bg-green-600' : 'bg-red-600';
+
+    return (
+        <div className={`w-5 h-5 border-[1.5px] ${colorClass} flex items-center justify-center bg-white rounded-sm`} title={isVeg ? 'Vegetarian' : 'Non-Vegetarian'}>
+            <div className={`w-2.5 h-2.5 rounded-full ${fillClass}`}></div>
+        </div>
+    );
+};
+
 const RecipeCard = ({ recipe, onClick, isActive, onUnbookmark, onDelete }) => {
     const { user } = useAuthStore();
     const { isDarkMode } = useThemeStore();
@@ -95,6 +106,10 @@ const RecipeCard = ({ recipe, onClick, isActive, onUnbookmark, onDelete }) => {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={(e) => (e.target.src = 'https://placehold.co/600x400?text=No+Image')}
                     />
+
+                    <div className="absolute top-3 left-3 z-10">
+                        <DietBadge isVeg={recipe.isVegetarian} />
+                    </div>
 
                     <div className="absolute top-3 left-3 flex gap-2 z-10">
                         {recipe.isPremium && <span className="px-2 py-1 bg-yellow-500 text-white text-xs font-bold uppercase rounded shadow-sm">Premium</span>}

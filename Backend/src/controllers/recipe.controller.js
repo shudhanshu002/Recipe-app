@@ -6,10 +6,11 @@ import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import { User } from '../models/user.model.js';
 
 // 1. CREATE RECIPE (Standard)
 const createRecipe = asyncHandler(async (req, res) => {
-    const { title, description, ingredients, instructions, difficulty, cuisine, mainIngredient, isPremium, dietaryTags, cookingTime, calories } = req.body;
+    const { title, description, ingredients, instructions, difficulty, cuisine, mainIngredient, isPremium, isVegetarian, dietaryTags, cookingTime, calories } = req.body;
 
     if ([title, description, instructions, difficulty, cuisine].some((field) => field?.trim() === '')) {
         throw new ApiError(400, 'All fields are required');
@@ -53,6 +54,7 @@ const createRecipe = asyncHandler(async (req, res) => {
         videoThumbnail,
         isPremium: isPremium === 'true',
         images: imageUrls,
+        isVegetarian: isVegetarian === 'true',
         videoUrl,
         createdBy: req.user._id,
         dietaryTags: dietaryTags ? dietaryTags.split(',') : [],
@@ -109,18 +111,27 @@ const getRecipeById = asyncHandler(async (req, res) => {
 
     // Premium Check
     if (recipe.isPremium) {
-        if (!req.user || !req.user.isSubscriptionActive) {
+        const isPremiumUser = req.user && (req.user.isPremium === true || req.user.subscriptionStatus === 'premium');
+
+        // Check 2: Is user the Creator? (Creator should always see their own recipe)
+        // recipe.createdBy is an object due to populate, so we use _id.toString()
+        const isCreator = req.user && recipe.createdBy && req.user._id.toString() === recipe.createdBy._id.toString();
+
+        if (!isPremiumUser && !isCreator) {
+            // Return 403 with partial data (so frontend can show preview)
             return res.status(403).json(
                 new ApiResponse(
                     403,
                     {
                         ...recipe.toObject(),
-                        instructions: 'Locked',
+                        instructions: null, // Hide sensitive content
+                        videoUrl: null, // Hide premium video
                         isLiked,
                         isBookmarked,
                         likesCount,
+                        isLocked: true, // Flag for frontend UI
                     },
-                    'Premium Content',
+                    'Premium Content: Upgrade required',
                 ),
             );
         }
@@ -141,27 +152,109 @@ const getRecipeById = asyncHandler(async (req, res) => {
 });
 
 // 3. GET ALL RECIPES (✅ Return explicit 'views' field)
+// const getAllRecipes = asyncHandler(async (req, res) => {
+//     const { search, cuisine, mainIngredient, sort } = req.query;
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const skip = (page - 1) * limit;
+//     const userId = req.user ? req.user._id : null;
+
+//     const query = {};
+//     if (search) query.title = { $regex: search, $options: 'i' };
+//     if (cuisine && cuisine !== 'All') query.cuisine = cuisine;
+//     if (mainIngredient) query.mainIngredient = { $regex: mainIngredient, $options: 'i' };
+
+//     let sortOptions = { createdAt: -1 };
+//     if (sort === 'name_asc') sortOptions = { title: 1 };
+//     else if (sort === 'name_desc') sortOptions = { title: -1 };
+//     else if (sort === 'oldest') sortOptions = { createdAt: 1 };
+
+//     let recipes = await Recipe.find(query).sort(sortOptions).skip(skip).limit(limit).select('-instructions -videoUrl').populate('createdBy', 'username avatar').lean();
+
+//     const recipeIds = recipes.map((r) => r._id);
+
+//     const likeCounts = await Like.aggregate([{ $match: { recipe: { $in: recipeIds } } }, { $group: { _id: '$recipe', count: { $sum: 1 } } }]);
+//     const likeMap = {};
+//     likeCounts.forEach((item) => {
+//         likeMap[item._id.toString()] = item.count;
+//     });
+
+//     let likedRecipeIds = new Set();
+//     let bookmarkedRecipeIds = new Set();
+//     if (userId) {
+//         const userLikes = await Like.find({ recipe: { $in: recipeIds }, likedBy: userId });
+//         const userBookmarks = await Bookmark.find({ recipe: { $in: recipeIds }, user: userId });
+//         likedRecipeIds = new Set(userLikes.map((l) => l.recipe.toString()));
+//         bookmarkedRecipeIds = new Set(userBookmarks.map((b) => b.recipe.toString()));
+//     }
+
+//     recipes = recipes.map((recipe) => ({
+//         ...recipe,
+//         likesCount: likeMap[recipe._id.toString()] || 0,
+//         isLiked: likedRecipeIds.has(recipe._id.toString()),
+//         isBookmarked: bookmarkedRecipeIds.has(recipe._id.toString()),
+//         // No change needed here if 'views' is in DB, .lean() returns it automatically
+//     }));
+
+//     const total = await Recipe.countDocuments(query);
+
+//     return res.status(200).json(
+//         new ApiResponse(
+//             200,
+//             {
+//                 recipes,
+//                 currentPage: page,
+//                 totalPages: Math.ceil(total / limit),
+//                 totalRecipes: total,
+//             },
+//             'Fetched',
+//         ),
+//     );
+// });
+
+// ... (Keep createRecipe and getRecipeById exactly as they were) ...
+
 const getAllRecipes = asyncHandler(async (req, res) => {
-    const { search, cuisine, mainIngredient, sort } = req.query;
+    const { search, cuisine, mainIngredient, sort, category, maxTime, difficulty } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const userId = req.user ? req.user._id : null;
 
     const query = {};
-    if (search) query.title = { $regex: search, $options: 'i' };
-    if (cuisine && cuisine !== 'All') query.cuisine = cuisine;
-    if (mainIngredient) query.mainIngredient = { $regex: mainIngredient, $options: 'i' };
+
+    // Text Search
+    if (search && search !== 'null' && search !== 'undefined') {
+        query.title = { $regex: search, $options: 'i' };
+    }
+
+    // Standard Filters (Check for "null" string explicitly)
+    if (cuisine && cuisine !== 'All' && cuisine !== 'null') query.cuisine = cuisine;
+    if (mainIngredient && mainIngredient !== 'null') query.mainIngredient = { $regex: mainIngredient, $options: 'i' };
+    if (difficulty && difficulty !== 'All' && difficulty !== 'null') query.difficulty = difficulty;
+
+    // ✅ Time Filter: Only apply if it's a valid number
+    if (maxTime && maxTime !== 'null' && !isNaN(parseInt(maxTime))) {
+        query.cookingTime = { $lte: parseInt(maxTime) };
+    }
+
+    // ✅ Category/Diet Filters
+    if (category && category !== 'null') {
+        if (category === 'veg') query.isVegetarian = true;
+        if (category === 'non-veg') query.isVegetarian = false;
+        if (category === 'premium') query.isPremium = true;
+        if (category === 'healthy') query.calories = { $lte: 500 };
+    }
 
     let sortOptions = { createdAt: -1 };
     if (sort === 'name_asc') sortOptions = { title: 1 };
     else if (sort === 'name_desc') sortOptions = { title: -1 };
     else if (sort === 'oldest') sortOptions = { createdAt: 1 };
+    else if (sort === 'popular') sortOptions = { views: -1 };
 
     let recipes = await Recipe.find(query).sort(sortOptions).skip(skip).limit(limit).select('-instructions -videoUrl').populate('createdBy', 'username avatar').lean();
 
     const recipeIds = recipes.map((r) => r._id);
-
     const likeCounts = await Like.aggregate([{ $match: { recipe: { $in: recipeIds } } }, { $group: { _id: '$recipe', count: { $sum: 1 } } }]);
     const likeMap = {};
     likeCounts.forEach((item) => {
@@ -182,7 +275,6 @@ const getAllRecipes = asyncHandler(async (req, res) => {
         likesCount: likeMap[recipe._id.toString()] || 0,
         isLiked: likedRecipeIds.has(recipe._id.toString()),
         isBookmarked: bookmarkedRecipeIds.has(recipe._id.toString()),
-        // No change needed here if 'views' is in DB, .lean() returns it automatically
     }));
 
     const total = await Recipe.countDocuments(query);
@@ -213,4 +305,72 @@ const deleteRecipe = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, {}, 'Deleted'));
 });
 
-export { createRecipe, getRecipeById, getAllRecipes, deleteRecipe };
+// ✅ 5. GET USER LIKED VIDEOS (New Function)
+const getUserLikedVideos = asyncHandler(async (req, res) => {
+    // 1. Find all like documents for this user
+    const likes = await Like.find({ likedBy: req.user._id });
+
+    // 2. Extract recipe IDs
+    const recipeIds = likes.map((like) => like.recipe);
+
+    // 3. Find recipes that have those IDs AND have a videoUrl
+    // We only fetch fields needed for the card
+    const recipes = await Recipe.find({
+        _id: { $in: recipeIds },
+        videoUrl: { $ne: null, $ne: '' }, // Must have video
+    })
+        .select('title videoUrl videoThumbnail images cookingTime calories isPremium isVegetarian')
+        .populate('createdBy', 'username avatar');
+
+    return res.status(200).json(new ApiResponse(200, recipes, 'Liked videos fetched successfully'));
+});
+
+// ✅ 6. GET TOP CHEFS (Robust 2-Step Logic)
+const getTopChefs = asyncHandler(async (req, res) => {
+    console.log("Fetching Top Chefs Stats...");
+
+    // Step 1: Get raw stats from recipes
+    const stats = await Recipe.aggregate([
+        {
+            $group: {
+                _id: "$createdBy",
+                totalRecipes: { $sum: 1 },
+                avgRating: { $avg: { $ifNull: ["$averageRating", 0] } },
+                totalViews: { $sum: "$views" }
+            }
+        },
+        { 
+            $sort: { totalRecipes: -1, avgRating: -1 } 
+        },
+        { $limit: 8 }
+    ]);
+
+    if (!stats.length) {
+        return res.status(200).json(new ApiResponse(200, [], "No chefs found"));
+    }
+
+    // Step 2: Manually fetch user details for these IDs (Handles missing/deleted users)
+    const userIds = stats.map(s => s._id);
+    const users = await User.find({ _id: { $in: userIds } }).select("username avatar");
+
+    // Step 3: Combine data
+    const topChefs = stats.map(stat => {
+        // Find user, ensuring string comparison for ObjectIds
+        const user = users.find(u => u._id.toString() === stat._id.toString());
+        
+        if (!user) return null; // Skip if user was deleted but recipes exist
+
+        return {
+            _id: user._id,
+            username: user.username,
+            avatar: user.avatar,
+            totalRecipes: stat.totalRecipes,
+            avgRating: parseFloat(stat.avgRating.toFixed(1)),
+            totalViews: stat.totalViews
+        };
+    }).filter(chef => chef !== null);
+
+    return res.status(200).json(new ApiResponse(200, topChefs, "Top chefs fetched"));
+});
+
+export { createRecipe, getRecipeById, getAllRecipes, deleteRecipe, getUserLikedVideos, getTopChefs };
