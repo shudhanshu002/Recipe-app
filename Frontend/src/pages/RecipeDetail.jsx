@@ -639,7 +639,10 @@ const RecipeDetail = () => {
                         </div>
                     ) : (
                         <>
-                            <div className={`whitespace-pre-wrap leading-relaxed ${subText}`}>{recipe?.instructions}</div>
+                            <div 
+                            className={`text-sm leading-relaxed prose ${isDarkMode ? 'prose-invert' : ''} max-w-none [&>p]:mb-2 [&>img]:rounded-lg [&>img]:my-4 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5 ${subText}`}
+                            dangerouslySetInnerHTML={{ __html: recipe.instructions || "No instructions available." }} 
+                        />
                             <div className={`mt-8 pt-6 border-t ${metaBorder}`}>
                                 <h4 className={`text-lg font-bold mb-3 ${textColor}`}>{isOwner ? 'Your Recipe Rating' : 'Rate this Recipe'}</h4>
                                 {isOwner ? (

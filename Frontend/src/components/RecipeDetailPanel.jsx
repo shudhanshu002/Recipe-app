@@ -239,7 +239,12 @@ const RecipeDetailPanel = ({ recipeId, onClose }) => {
                                     )}
                                 </div>
                             ) : (
-                                <p className={`text-sm whitespace-pre-wrap leading-relaxed ${subText}`}>{recipe.instructions || 'No instructions available.'}</p>
+                                <div
+                                    className={`text-sm leading-relaxed prose ${
+                                        isDarkMode ? 'prose-invert' : ''
+                                    } max-w-none [&>p]:mb-2 [&>img]:rounded-lg [&>img]:my-4 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5 ${subText}`}
+                                    dangerouslySetInnerHTML={{ __html: recipe.instructions || 'No instructions available.' }}
+                                />
                             )}
                         </div>
                     </div>
