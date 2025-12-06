@@ -8,6 +8,7 @@ import { authApi } from '../api/auth';
 import useAuthStore from '../store/useAuthStore';
 import Input from '../components/Input';
 import useThemeStore from '../store/useThemeStore';
+import logo from '../assets/circular_logo_dark.png'
 
 const Login = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -15,12 +16,9 @@ const Login = () => {
     const navigate = useNavigate();
     const { login } = useAuthStore();
     const { isDarkMode } = useThemeStore();
+    console.log("Theme: ", isDarkMode)
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = useForm({
+    const { register, handleSubmit, formState: { errors },} = useForm({
         resolver: zodResolver(loginSchema),
     });
 

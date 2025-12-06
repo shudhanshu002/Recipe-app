@@ -42,4 +42,22 @@ export const recipeApi = {
             return handleErrorResponse(error);
         }
     },
+
+    getLikedVideos: async () => {
+        try {
+            const response = await api.get('/recipes/user/liked-videos');
+            return response.data.data;
+        } catch (error) {
+            return handleErrorResponse(error);
+        }
+    },
+
+    getTopChefs: async () => {
+        try {
+            const response = await api.get('/recipes/top-chefs');
+            return response.data.data;
+        } catch (error) {
+            return handleErrorResponse(error);
+        }
+    },
 };

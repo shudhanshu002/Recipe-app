@@ -2,6 +2,7 @@ import api from "../lib/axios.js";
 import { handleSuccessResponse, handleErrorResponse } from "../utils/apiUtils.js";
 
 export const authApi = {
+    // register auth
     register: async (userData) => {
         try {
             const response = await api.post('/users/register', userData);
@@ -12,6 +13,7 @@ export const authApi = {
         }
     },
 
+    // verify auth
     verifyOtp: async (data) => {
         try {
             const response = await api.post('/users/verify-otp',data);
@@ -21,6 +23,7 @@ export const authApi = {
         }
     },
 
+    // login auth
     login: async (credentials) => {
         try {
             const response = await api.post('/users/login', credentials);
@@ -30,6 +33,7 @@ export const authApi = {
         }
     },
 
+    // logout auth
     logout: async () => {
         try {
             const response = await api.post('/users/logout');
@@ -39,6 +43,7 @@ export const authApi = {
         }
     },
 
+    // refreshToken auth
     refreshToken: async () => {
         try {
             const response = await api.post('/users/refresh-token');

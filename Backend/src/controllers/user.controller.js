@@ -337,4 +337,29 @@ const getTopChefs = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, users, 'Community fetched'));
 });
 
-export { registerUser, loginUser, verifyUserOtp, logoutUser, handleSocialLogin, refreshAccessToken, updateUserAvatar, updateAccountDetails, updateUserCoverImage, getTopChefs };
+const getCurrentUser = asyncHandler(async (req, res) => {
+    // 1. Fetch user from DB (Always fetch fresh to check expiry)
+    const user = await User.findById(req.user?._id).select('-password');
+
+    if (!user) {
+        throw new ApiError(404, 'User not found');
+    }
+
+    // --- AUTO-EXPIRATION CHECK ---
+    // If premium is true BUT the expiry date has passed, revoke it immediately.
+    if (user.isPremium && user.subscriptionExpiry) {
+        if (new Date() > user.subscriptionExpiry) {
+            console.log(`[Auto-Expire] Subscription expired for ${user.username}. Revoking status.`);
+
+            user.isPremium = false;
+            user.subscriptionPlan = null;
+            user.subscriptionExpiry = null;
+            await user.save();
+        }
+    }
+    // -----------------------------
+
+    return res.status(200).json(new ApiResponse(200, user, 'User details fetched successfully'));
+});
+
+export { registerUser, loginUser, verifyUserOtp, logoutUser, handleSocialLogin, refreshAccessToken, updateUserAvatar, updateAccountDetails, updateUserCoverImage, getTopChefs, getCurrentUser };

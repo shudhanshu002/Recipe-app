@@ -16,7 +16,7 @@ import blogRouter from './blog.routes.js';
 import aiRouter from './ai.routes.js';
 
 
-import { upgradeToPremium } from "../controllers/payment.controller.js";
+import paymentRouter from './payment.routes.js';
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 
@@ -36,6 +36,6 @@ router.use("/shorts", shortRouter);
 router.use('/blogs', blogRouter);
 router.use('/ai', aiRouter);
 // Payment
-router.post("/payment/subscribe", verifyJWT, upgradeToPremium);
+router.use('/payment', paymentRouter);
 
 export default router;

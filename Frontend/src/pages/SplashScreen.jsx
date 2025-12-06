@@ -16,7 +16,7 @@ const SplashScreen = ({ onFinish }) => {
         if (index < images.length - 1) {
             const timer = setTimeout(() => {
                 setIndex((prev) => prev + 1);
-            }, 2000);
+            }, 1000);
             return () => clearTimeout(timer);
         } else {
             const timer = setTimeout(() => onFinish(), 1500);

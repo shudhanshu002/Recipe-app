@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from 'axios';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
@@ -9,8 +9,8 @@ const api = axios.create({
 });
 
 api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
+    (response) => response, // success fn
+    async (error) => {  // error fn
         const originalRequest = error.config;
 
         if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('refresh-token')) {
@@ -25,7 +25,7 @@ api.interceptors.response.use(
             }
         }
         return Promise.reject(error);
-    }
+    },
 );
 
 export default api;
