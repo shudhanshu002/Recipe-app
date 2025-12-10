@@ -34,7 +34,7 @@ const stripHtml = (html) => {
 };
 
 // emoji picker custom to like
-const ReactionPicker = ({ onReact, onClose }) => {
+const ReactionPicker = ({ onReact, onClose, isDarkMode }) => {
     const emojis = ['👍', '❤️', '😂', '😮', '😢', '😡'];
     return (
         <div
@@ -171,7 +171,7 @@ const BlogCard = ({ blog, onDelete }) => {
                                     </span>
                                 </div>
 
-                                {/* Delete Button (Visible only to Owner) */}
+                                {/* Delete Button --- Visible only to Owner */}
                                 {isOwner && (
                                     <button
                                         onClick={handleDelete}
@@ -214,7 +214,7 @@ const BlogCard = ({ blog, onDelete }) => {
                                 >
                                     {myReaction || <Heart size={14} />} {reactions.length}
                                 </button>
-                                {showReactions && <ReactionPicker onClose={() => setShowReactions(false)} onReact={handleReact} />}
+                                {showReactions && <ReactionPicker onClose={() => setShowReactions(false)} onReact={handleReact} isDarkMode={isDarkMode} />}
                             </div>
                             <button
                                 onClick={(e) => {

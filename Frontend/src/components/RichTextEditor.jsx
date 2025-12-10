@@ -1,11 +1,13 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Bold, Italic, Underline, Strikethrough, List, ListOrdered, Image as ImageIcon, Link as LinkIcon, Quote, Heading1, Heading2, Loader2, Code, Type } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
 import { blogApi } from '../api/blogs';
 import useThemeStore from '../store/useThemeStore';
+import { toast, ToastContainer } from 'react-toastify';
+import { Bold, Italic, Underline, Strikethrough, List, ListOrdered, Image as ImageIcon, Link as LinkIcon, Quote, Heading1, Heading2, Loader2, Code, Type } from 'lucide-react';
 
 // --- Toolbar Button Component ---
 const ToolbarButton = ({ onClick, isActive, disabled, children, title }) => {
-    const { isDarkMode } = useThemeStore();
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
 
     const base = 'p-1.5 rounded transition-colors flex items-center justify-center';
     const active = isDarkMode ? 'bg-white text-black' : 'bg-black text-white';
@@ -29,7 +31,11 @@ const ToolbarButton = ({ onClick, isActive, disabled, children, title }) => {
 
 // --- Main Editor Component ---
 const RichTextEditor = ({ content = '', onChange = () => {} }) => {
-    const { isDarkMode } = useThemeStore();
+    // ✅ Use Theme Store
+    const { theme } = useThemeStore();
+
+    const isDarkMode = theme === 'dark';
+
     const editorRef = useRef(null);
     const fileInputRef = useRef(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -43,13 +49,11 @@ const RichTextEditor = ({ content = '', onChange = () => {} }) => {
                 editorRef.current.innerHTML = content;
             }
         }
-        // Default paragraph separator to <p>
         try {
             document.execCommand('defaultParagraphSeparator', false, 'p');
         } catch (e) {
-            // some browsers may ignore; safe to continue
+            // ignore
         }
-        // run an initial format check
         setTimeout(checkFormats, 0);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -62,7 +66,6 @@ const RichTextEditor = ({ content = '', onChange = () => {} }) => {
     };
 
     const checkFormats = () => {
-        // queryCommandValue may return block names like "h2", "blockquote", etc.
         const block = (document.queryCommandValue && document.queryCommandValue('formatBlock')) || '';
         const formats = {
             bold: !!document.queryCommandState && document.queryCommandState('bold'),
@@ -89,24 +92,20 @@ const RichTextEditor = ({ content = '', onChange = () => {} }) => {
         setTimeout(checkFormats, 0);
     };
 
-    // Toggle block (blockquote / pre) - Option A wants toggleable blocks
     const toggleBlock = (tagName) => {
         const current = (document.queryCommandValue && document.queryCommandValue('formatBlock')) || '';
         if (current && current.toLowerCase() === tagName.toLowerCase()) {
-            execCmd('formatBlock', 'p'); // toggle off -> normal paragraph
+            execCmd('formatBlock', 'p');
         } else {
             execCmd('formatBlock', tagName);
         }
     };
 
-    // Helper: determine whether caret is effectively at the end of a block
     const isCaretAtEndOf = (parentBlock, range) => {
         if (!parentBlock || !range) return false;
         try {
             const r = range.cloneRange();
-            // start at caret
             r.setStart(range.endContainer, range.endOffset);
-            // end after the parent block
             r.setEndAfter(parentBlock);
             const trailing = r.toString();
             return trailing.trim() === '';
@@ -115,7 +114,6 @@ const RichTextEditor = ({ content = '', onChange = () => {} }) => {
         }
     };
 
-    // Smart Enter Key Logic (Option A) - Medium-style
     const handleKeyDown = (e) => {
         if (e.key !== 'Enter') return;
 
@@ -123,29 +121,23 @@ const RichTextEditor = ({ content = '', onChange = () => {} }) => {
         if (!selection || !selection.rangeCount) return;
 
         const range = selection.getRangeAt(0);
-        // identify common ancestor node (text node -> parent)
         let node = range.commonAncestorContainer;
         if (node.nodeType === 3) node = node.parentNode;
         const parentBlock = node.closest && node.closest('blockquote, pre');
 
-        // Allow Shift+Enter to create soft breaks everywhere
         if (e.shiftKey) {
             return;
         }
 
         if (parentBlock) {
-            // If the caret is in a code block (<pre>) and not at the end, let it insert a newline
             if (parentBlock.tagName === 'PRE') {
                 const atEnd = isCaretAtEndOf(parentBlock, range);
-                // If caret at end or current line is empty, exit; otherwise do nothing (allow newline)
                 const currentLineText = range.startContainer.textContent || '';
                 if (currentLineText.trim() === '' || atEnd) {
                     e.preventDefault();
-                    // Insert paragraph after the pre block and move caret there
                     const p = document.createElement('p');
                     p.innerHTML = '<br>';
                     parentBlock.insertAdjacentElement('afterend', p);
-                    // Move caret
                     const newRange = document.createRange();
                     newRange.setStart(p, 0);
                     newRange.setEnd(p, 0);
@@ -154,35 +146,23 @@ const RichTextEditor = ({ content = '', onChange = () => {} }) => {
                     handleInput();
                     return;
                 } else {
-                    // allow newline inside pre (normal code behavior)
                     return;
                 }
             }
 
-            // For blockquote (and other block tags matched), exit when:
-            //  - caret at end of parent block
-            //  - OR current line is empty (user pressed Enter on empty line)
             const isAtEnd = isCaretAtEndOf(parentBlock, range);
             const currentText = (range.startContainer && range.startContainer.textContent) || '';
             if (currentText.trim() === '' || isAtEnd) {
                 e.preventDefault();
-
                 const p = document.createElement('p');
                 p.innerHTML = '<br>';
-
                 parentBlock.insertAdjacentElement('afterend', p);
-
-                // Move caret to new paragraph
                 const newRange = document.createRange();
                 newRange.setStart(p, 0);
                 newRange.setEnd(p, 0);
                 selection.removeAllRanges();
                 selection.addRange(newRange);
-
-                // Remove possible leftover empty nodes inside the block (if caret was on an empty placeholder)
-                // Only remove immediate empty text nodes that are direct children
                 try {
-                    // If the node we were editing is an empty text node's parent and it's empty, remove it
                     if (range.startContainer.nodeType === 3 && range.startContainer.textContent.trim() === '') {
                         const parent = range.startContainer.parentNode;
                         if (parent && parent !== parentBlock && parent.textContent.trim() === '') {
@@ -190,16 +170,14 @@ const RichTextEditor = ({ content = '', onChange = () => {} }) => {
                         }
                     }
                 } catch (err) {
-                    // ignore cleanup errors
+                    // ignore
                 }
-
                 handleInput();
                 return;
             }
         }
     };
 
-    // Capture cursor position before file dialog opens
     const triggerImageUpload = () => {
         const selection = window.getSelection();
         if (selection && selection.rangeCount > 0) {
@@ -216,21 +194,18 @@ const RichTextEditor = ({ content = '', onChange = () => {} }) => {
             const url = await blogApi.uploadImage(file);
             if (url) {
                 editorRef.current?.focus();
-
-                // Restore selection
                 if (savedRange.current) {
                     const sel = window.getSelection();
                     sel.removeAllRanges();
                     sel.addRange(savedRange.current);
                 }
-
                 const imgHtml = `<img src="${url}" alt="Blog Image" style="max-width: 100%; border-radius: 8px; margin: 10px 0;" /><p><br></p>`;
                 execCmd('insertHTML', imgHtml);
                 handleInput();
             }
         } catch (error) {
             console.error(error);
-            alert('Failed to upload image');
+            toast.error('Failed to upload image');
         } finally {
             setIsUploading(false);
             if (e.target) e.target.value = '';
@@ -242,13 +217,14 @@ const RichTextEditor = ({ content = '', onChange = () => {} }) => {
         if (url) execCmd('createLink', url);
     };
 
-    // Theme Styles
+    // Theme Styles Definition
     const borderColor = isDarkMode ? 'border-gray-700' : 'border-gray-200';
     const toolbarBg = isDarkMode ? 'bg-[#121212] border-gray-700' : 'bg-white border-gray-200';
     const editorBg = isDarkMode ? 'bg-[#1e1e1e] text-gray-200' : 'bg-white text-gray-800';
 
     return (
         <div className={`rounded-xl overflow-hidden border shadow-sm flex flex-col ${borderColor}`}>
+            <ToastContainer />
             {/* Toolbar */}
             <div className={`flex flex-wrap items-center gap-1 p-2 border-b sticky top-0 z-10 ${toolbarBg}`}>
                 <ToolbarButton onClick={() => execCmd('formatBlock', 'H2')} isActive={activeFormats.h2} title="Heading 2">
@@ -323,12 +299,13 @@ const RichTextEditor = ({ content = '', onChange = () => {} }) => {
                 onKeyUp={checkFormats}
                 onMouseUp={checkFormats}
                 onKeyDown={handleKeyDown}
+                // Apply Dark Mode styles and Tailwind Typography Inversion
                 className={`flex-1 p-6 min-h-[400px] focus:outline-none prose max-w-none ${editorBg} ${isDarkMode ? 'prose-invert' : ''}`}
                 style={{ minHeight: '400px', overflowY: 'auto' }}
                 suppressContentEditableWarning
             />
 
-            {/* Styles */}
+            {/* Dynamic Styles for inner HTML elements */}
             <style>{`
         .prose img {
           border-radius: 0.5rem;

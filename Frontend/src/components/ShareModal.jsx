@@ -3,7 +3,8 @@ import { X, Copy, Check } from 'lucide-react';
 import useThemeStore from '../store/useThemeStore';
 
 const ShareModal = ({ url, title, onClose }) => {
-    const { isDarkMode } = useThemeStore();
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
     const [copied, setCopied] = React.useState(false);
 
     // Social Media Share Links
@@ -50,7 +51,7 @@ const ShareModal = ({ url, title, onClose }) => {
             <div className={`w-full max-w-sm rounded-2xl shadow-2xl border p-6 relative ${modalBg} transform transition-all scale-100`}>
                 <div className="flex justify-between items-center mb-6">
                     <h3 className={`text-lg font-bold ${textColor}`}>Share this post</h3>
-                    <button onClick={onClose} className={`p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${subText}`}>
+                    <button onClick={onClose} className={`p-1 rounded-full transition-colors ${subText} ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}>
                         <X size={20} />
                     </button>
                 </div>
@@ -73,7 +74,7 @@ const ShareModal = ({ url, title, onClose }) => {
                     <button
                         onClick={handleCopy}
                         className={`px-3 py-1.5 rounded-md text-xs font-bold flex items-center gap-1 transition-all ${
-                            copied ? 'bg-green-500 text-white' : 'bg-primary text-white hover:bg-orange-600'
+                            copied ? 'bg-green-500 text-white' : 'bg-[#f97316] text-white hover:bg-orange-600'
                         }`}
                     >
                         {copied ? (
