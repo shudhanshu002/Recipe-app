@@ -35,7 +35,7 @@ export const FilterDropdown = ({ icon: Icon, label, value, options, onChange, is
         <div className="relative " ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all duration-200 text-sm font-medium w-full md:w-auto justify-between min-w-[160px] ${bgClass} ${activeClass}`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all duration-200 text-sm font-medium w-full md:w-auto justify-between min-w-40 ${bgClass} ${activeClass}`}
             >
                 <div className="flex items-center gap-2">
                     <Icon size={16} className={isActive ? 'text-[#f97316]' : 'text-gray-400'} />
