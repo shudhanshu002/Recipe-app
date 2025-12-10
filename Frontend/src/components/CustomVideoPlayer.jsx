@@ -1,15 +1,15 @@
-import React, { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import Plyr from 'plyr-react';
 import 'plyr-react/plyr.css';
 import Hls from 'hls.js';
 import useThemeStore from '../store/useThemeStore';
 
 const CustomVideoPlayer = ({ src, poster, captions = [] }) => {
-    const { isDarkMode } = useThemeStore();
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
     const ref = useRef(null);
 
-    // Plyr Options
-    // We explicitly enable 'quality' and 'captions' in settings
+    
     const plyrOptions = {
         controls: ['play-large', 'restart', 'rewind', 'play', 'fast-forward', 'progress', 'current-time', 'duration', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
         settings: ['captions', 'quality', 'speed', 'loop'],
@@ -26,7 +26,6 @@ const CustomVideoPlayer = ({ src, poster, captions = [] }) => {
             if (!video || !src) return;
 
             // 1. Convert Cloudinary MP4 to HLS (m3u8) for streaming & quality support
-            // This tells Cloudinary to generate adaptive bitrates
             const hlsUrl = src.includes('cloudinary') && src.endsWith('.mp4') ? src.replace('.mp4', '.m3u8') : src;
 
             const player = ref.current?.plyr;
@@ -34,7 +33,7 @@ const CustomVideoPlayer = ({ src, poster, captions = [] }) => {
             // 2. Initialize HLS if supported (Chrome, Firefox, Edge)
             if (Hls.isSupported() && (hlsUrl.endsWith('.m3u8') || src.includes('m3u8'))) {
                 const hls = new Hls({
-                    maxMaxBufferLength: 30, // 30s buffer
+                    maxMaxBufferLength: 30, 
                 });
 
                 hls.loadSource(hlsUrl);
@@ -45,7 +44,6 @@ const CustomVideoPlayer = ({ src, poster, captions = [] }) => {
                     const availableQualities = hls.levels.map((l) => l.height);
 
                     // Add 'Auto' option (represented by 0 or undefined usually, but Plyr likes explicit numbers)
-                    // We simply reverse to have highest first
                     availableQualities.reverse();
 
                     if (player) {
@@ -80,9 +78,7 @@ const CustomVideoPlayer = ({ src, poster, captions = [] }) => {
         loadVideo();
     }, [src]);
 
-    // Define Source
-    // Note: If no captions are passed, the menu item hides automatically.
-    // You can pass dummy captions to test: [{ kind: 'captions', label: 'English', srclang: 'en', src: '/path/to/vtt', default: true }]
+
     const source = {
         type: 'video',
         sources: [
@@ -92,11 +88,11 @@ const CustomVideoPlayer = ({ src, poster, captions = [] }) => {
             },
         ],
         poster: poster,
-        tracks: captions, // ✅ Pass VTT tracks here
+        tracks: captions, // Pass VTT tracks here
     };
 
     return (
-        // ✅ aspect-video prevents layout shift (jumping)
+        // aspect-video prevents layout shift (jumping)
         <div className="w-full rounded-xl overflow-hidden shadow-lg relative z-0 group bg-black aspect-video">
             <div className={`plyr-wrapper w-full h-full ${isDarkMode ? 'dark-theme' : 'light-theme'}`}>
                 <Plyr ref={ref} options={plyrOptions} source={source} />
