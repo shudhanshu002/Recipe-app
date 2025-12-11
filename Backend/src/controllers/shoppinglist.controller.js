@@ -33,7 +33,7 @@ const addShoppingItem = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, list, 'Item added'));
 });
 
-// ✅ NEW: ADD ALL INGREDIENTS FROM RECIPE
+// 3. ADD ALL INGREDIENTS FROM RECIPE
 const addFromRecipe = asyncHandler(async (req, res) => {
     const { recipeId } = req.body;
 
@@ -71,7 +71,7 @@ const addFromRecipe = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, list, `Added ${addedCount} ingredients to your list`));
 });
 
-// 3. TOGGLE CHECK
+// 4. TOGGLE CHECK
 const toggleItemCheck = asyncHandler(async (req, res) => {
     const { itemId } = req.params;
     const list = await ShoppingList.findOne({ user: req.user._id });
@@ -85,7 +85,7 @@ const toggleItemCheck = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, list, 'Item updated'));
 });
 
-// 4. REMOVE ITEM
+// 5. REMOVE ITEM
 const removeShoppingItem = asyncHandler(async (req, res) => {
     const { itemId } = req.params;
     const list = await ShoppingList.findOneAndUpdate({ user: req.user._id }, { $pull: { items: { _id: itemId } } }, { new: true });

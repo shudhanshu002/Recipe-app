@@ -4,6 +4,7 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
 
+// 1. add short by user
 const addShort = asyncHandler(async (req, res) => {
     const { recipeId } = req.params;
     const { caption } = req.body;
@@ -31,6 +32,7 @@ const addShort = asyncHandler(async (req, res) => {
     return res.status(201).json(new ApiResponse(201, short, 'Short uploaded successfully'));
 });
 
+// 2. fetching other's sort
 const getRecipeShorts = asyncHandler(async (req, res) => {
     const { recipeId } = req.params;
 

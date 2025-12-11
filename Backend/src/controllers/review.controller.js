@@ -19,7 +19,6 @@ const addReview = asyncHandler(async (req, res) => {
         if (uploaded) mediaUrl = uploaded.url;
     }
 
-    // Only require rating if it's a rating action. Content is optional for pure ratings.
     if (!rating && !content) {
         throw new ApiError(400, 'Content or rating is required');
     }
@@ -29,23 +28,18 @@ const addReview = asyncHandler(async (req, res) => {
         throw new ApiError(404, 'Recipe not found');
     }
 
-    // Prevent Author from Rating their own recipe
     if (recipe.createdBy.toString() === req.user._id.toString()) {
         throw new ApiError(403, 'You cannot rate your own recipe');
     }
 
-    // Check if user already reviewed this recipe
     let review = await Review.findOne({ recipe: recipeId, author: req.user._id });
 
     if (review) {
-        // UPDATE existing review
         if (rating) review.rating = rating;
         if (content) review.content = content;
         if (mediaUrl) review.media = mediaUrl;
         await review.save();
     } else {
-        // CREATE new review
-        // Ensure rating exists for new review if content is empty
         if (!rating && !content) throw new ApiError(400, 'Rating is required for new review');
 
         review = await Review.create({
@@ -112,13 +106,12 @@ const addReply = asyncHandler(async (req, res) => {
     review.replies.push(reply);
     await review.save();
 
-    // Notify Original Review Author (simplified)
     if (review.author.toString() !== req.user._id.toString()) {
         try {
             await Notification.create({
                 recipient: review.author,
                 sender: req.user._id,
-                type: 'COMMENT', // Using generic comment type for reply notification
+                type: 'COMMENT', 
                 recipe: review.recipe,
             });
         } catch (e) {}
@@ -140,13 +133,12 @@ const toggleReviewLike = asyncHandler(async (req, res) => {
         review.likes.pull(userId);
     } else {
         review.likes.push(userId);
-        // Notify Comment Author
         if (review.author.toString() !== userId.toString()) {
             try {
                 await Notification.create({
                     recipient: review.author,
                     sender: userId,
-                    type: 'LIKE_RECIPE', // Using existing type or add LIKE_COMMENT
+                    type: 'LIKE_RECIPE',
                     recipe: review.recipe,
                 });
             } catch (e) {}
@@ -182,13 +174,11 @@ const toggleReplyLike = asyncHandler(async (req, res) => {
 // 5. GET REVIEWS
 const getRecipeReviews = asyncHandler(async (req, res) => {
     const { recipeId } = req.params;
-    // Fetch all reviews sorted by date
     const reviews = await Review.find({ recipe: recipeId }).populate('author', 'username avatar').populate('replies.author', 'username avatar').sort({ createdAt: -1 });
 
     return res.status(200).json(new ApiResponse(200, reviews, 'Reviews fetched'));
 });
 
-// Compatibility exports for reaction routes if they exist in your router
 const toggleReviewReaction = toggleReviewLike;
 const toggleReplyReaction = toggleReplyLike;
 

@@ -22,7 +22,6 @@ const addToMealPlan = asyncHandler(async (req, res) => {
         mealType: mealType || 'Dinner',
     });
 
-    // Populate immediately for UI updates
     const populatedPlan = await MealPlan.findById(plan._id).populate('recipe', 'title images difficulty cookingTime');
 
     return res.status(201).json(new ApiResponse(201, populatedPlan, 'Added to meal plan'));
@@ -31,12 +30,8 @@ const addToMealPlan = asyncHandler(async (req, res) => {
 // 2. GET WEEKLY PLAN
 const getWeeklyPlan = asyncHandler(async (req, res) => {
     const { startDate, endDate } = req.query;
-
-    // Default to today if missing
     let start = startDate ? new Date(startDate) : new Date();
     start.setHours(0, 0, 0, 0);
-
-    // Default to 7 days from now if missing
     let end = endDate ? new Date(endDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     end.setHours(23, 59, 59, 999);
 
@@ -57,10 +52,10 @@ const getMealHistory = asyncHandler(async (req, res) => {
 
     const history = await MealPlan.find({
         user: req.user._id,
-        date: { $lt: today }, // Strictly less than today
+        date: { $lt: today }, 
     })
         .populate('recipe', 'title images difficulty cookingTime')
-        .sort({ date: -1 }); // Newest past dates first
+        .sort({ date: -1 }); 
 
     return res.status(200).json(new ApiResponse(200, history, 'History fetched'));
 });

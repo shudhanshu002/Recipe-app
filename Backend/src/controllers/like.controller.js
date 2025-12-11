@@ -5,7 +5,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { Notification } from '../models/notification.model.js';
 import { Recipe } from '../models/recipe.model.js';
 
-
+// 1. liking recipe / dislike
 const toggleRecipeLike = asyncHandler(async (req, res) => {
     const { recipeId } = req.params;
 
@@ -46,7 +46,7 @@ const toggleRecipeLike = asyncHandler(async (req, res) => {
     }
 });
 
-
+// 2. fetching liked recipe
 const getLikedRecipes = asyncHandler(async (req, res) => {
     const likes = await Like.find({ likedBy: req.user._id }).populate('recipe');
     const recipes = likes.map((like) => like.recipe).filter((r) => r !== null);
@@ -54,6 +54,7 @@ const getLikedRecipes = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, recipes, 'Liked recipes fetched'));
 });
 
+// 3. review like/dislike
 const toggleReviewLike = asyncHandler(async (req, res) => {
     const { reviewId } = req.params;
 

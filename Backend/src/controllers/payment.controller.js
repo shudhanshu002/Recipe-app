@@ -10,7 +10,6 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// Centralized Plan Config
 const PLANS = {
     monthly: { amount: 499, months: 1 },
     yearly: { amount: 4999, months: 12 },
@@ -32,14 +31,13 @@ export const createOrder = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id);
 
     // --- BLOCK ACTIVE SUBSCRIPTIONS ---
-    // If user is premium AND expiry date is in the future
     if (user.isPremium && user.subscriptionExpiry && user.subscriptionExpiry > new Date()) {
         const remainingDays = Math.ceil((user.subscriptionExpiry - new Date()) / (1000 * 60 * 60 * 24));
         throw new ApiError(400, `You already have an active subscription expiring in ${remainingDays} days.`);
     }
 
     const options = {
-        amount: PLANS[planType].amount * 100, // Convert to paise
+        amount: PLANS[planType].amount * 100, 
         currency: 'INR',
         receipt: `receipt_${Date.now()}`,
     };

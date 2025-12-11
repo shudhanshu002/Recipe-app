@@ -3,7 +3,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
-
+// 1. attack bookmark to recipe
 const toggleBookmark = asyncHandler(async (req, res) => {
     const { recipeId } = req.params;
 
@@ -24,7 +24,7 @@ const toggleBookmark = asyncHandler(async (req, res) => {
     }
 });
 
-
+// 2. fetch all recipe with bookmark
 const getUserBookmarks = asyncHandler(async (req, res) => {
     const bookmarks = await Bookmark.find({ user: req.user._id }).populate({
         path: 'recipe',

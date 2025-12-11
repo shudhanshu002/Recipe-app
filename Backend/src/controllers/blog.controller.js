@@ -6,6 +6,10 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
 
 
+// blog controller
+
+
+// 1. create a blog 
 const createBlog = asyncHandler(async (req, res) => {
     const { title, content, topic, topicColor } = req.body;
     const coverLocalPath = req.file?.path;
@@ -28,6 +32,7 @@ const createBlog = asyncHandler(async (req, res) => {
     return res.status(201).json(new ApiResponse(201, blog, 'Blog published'));
 });
 
+// 2. getting all blogs 
 const getAllBlogs = asyncHandler(async (req, res) => {
     const blogs = await Blog.find().populate('author', 'username avatar').sort({ createdAt: -1 });
     const blogsWithCounts = await Promise.all(
@@ -39,6 +44,7 @@ const getAllBlogs = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, blogsWithCounts, 'Blogs fetched'));
 });
 
+// 3. getting specific blog using id
 const getBlogById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const userId = req.user ? req.user._id : null;
@@ -48,6 +54,7 @@ const getBlogById = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, blog, 'Blog fetched'));
 });
 
+// 4. blog reaction 
 const toggleBlogReaction = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { emoji } = req.body;
@@ -66,6 +73,7 @@ const toggleBlogReaction = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, blog.reactions, 'Reaction updated'));
 });
 
+// 5. adding comment
 const addComment = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { content, parentId } = req.body;
@@ -81,12 +89,14 @@ const addComment = asyncHandler(async (req, res) => {
     return res.status(201).json(new ApiResponse(201, comment, 'Comment added'));
 });
 
+// 6. fetching comments
 const getComments = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const comments = await Comment.find({ blog: id }).populate('author', 'username avatar').sort({ createdAt: 1 }); // Sorted oldest to newest for tree building
     return res.status(200).json(new ApiResponse(200, comments, 'Comments fetched'));
 });
 
+// 7. liking on comment
 const toggleCommentLike = asyncHandler(async (req, res) => {
     const { commentId } = req.params;
     const userId = req.user._id;
@@ -114,6 +124,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     );
 });
 
+// 8. Blog image upload
 const uploadBlogImage = asyncHandler(async (req, res) => {
     const imageLocalPath = req.file?.path;
 
@@ -130,6 +141,7 @@ const uploadBlogImage = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, { url: image.url }, 'Image uploaded successfully'));
 });
 
+// 9. deleting Blog
 const deleteBlog = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const blog = await Blog.findById(id);

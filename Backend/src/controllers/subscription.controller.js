@@ -7,7 +7,7 @@ import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
-
+// 1. subscribing -- fn
 const toggleSubscription = asyncHandler(async (req, res) => {
     const { channelId } = req.params;
 
@@ -34,7 +34,6 @@ const toggleSubscription = asyncHandler(async (req, res) => {
         channel: channelId,
     });
 
-    // Notification (Safe create)
     try {
         await Notification.create({
             recipient: channelId,
@@ -48,6 +47,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, { subscribed: true }, 'Subscribed successfully'));
 });
 
+// 2. user followers watch
 const getUserFollowers = asyncHandler(async (req, res) => {
     const { channelId } = req.params;
     const followers = await Subscription.find({ channel: channelId }).populate('subscriber', 'username avatar title').select('subscriber');
@@ -60,7 +60,7 @@ const getUserFollowers = asyncHandler(async (req, res) => {
     );
 });
 
-
+// 3. user following watch
 const getUserFollowing = asyncHandler(async (req, res) => {
     const { subscriberId } = req.params;
     const user = await User.findById(subscriberId);
@@ -81,7 +81,7 @@ const getUserFollowing = asyncHandler(async (req, res) => {
     );
 });
 
-
+// 4. get channel profile
 const getUserChannelProfile = asyncHandler(async (req, res) => {
     const { username } = req.params;
 
@@ -183,7 +183,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     if (stats.premiumRecipes > 0) badges.push({ label: 'Premium Creator', icon: '💎', color: 'blue' });
     if (parseFloat(stats.averageRating) >= 4.5 && stats.totalRecipes > 5) badges.push({ label: '5 Star Cook', icon: '🥇', color: 'orange' });
 
-    // 6. Construct Response
     const profileData = {
         ...userStats[0],
         stats: {
