@@ -19,7 +19,7 @@ import { formatTime, formatRelativeDate } from '../utils/formatDate';
 
 // icons and utils
 import { toast, ToastContainer } from 'react-toastify';
-import { Clock, Star, Lock, ChevronLeft, ChevronRight, PlayCircle, Video, MessageCircle, ThumbsUp, Send, Image as ImageIcon, Film, Upload, X, ChevronDown, ChevronUp, Loader2, ShoppingCart, Share2, Leaf, Drumstick, Flame } from 'lucide-react';
+import { Clock, Star, Lock, ChevronLeft, ChevronRight, PlayCircle, Video, MessageCircle, ThumbsUp, Send, Image as ImageIcon, Film, Upload, X, ChevronDown, ChevronUp, Loader2, ShoppingCart, Share2, Leaf, Drumstick, Flame, CornerDownRight } from 'lucide-react';
 
 // building Comment Tree ---
 const buildReplyTree = (replies) => {
@@ -49,8 +49,15 @@ const CommentThread = ({ reply, reviewId, depth = 0, activeReplyBox, setActiveRe
     const myReaction = reply.likes?.includes(user?._id);
 
     return (
-        <div className={`mt-3 ${depth > 0 ? 'pl-4 border-l-2 border-gray-200 dark:border-gray-700' : ''}`}>
+        <div className={`mt-3 ${depth > 0 ? 'ml-2 md:ml-6' : ''}`}>
             <div className="flex gap-3">
+                {/* Curve Arrow Icon for nested replies */}
+                {depth > 0 && (
+                    <div className="text-gray-400 dark:text-gray-600 shrink-0 pt-2 -mr-1">
+                        <CornerDownRight size={16} />
+                    </div>
+                )}
+
                 <Link to={`/profile/${reply.author?.username}`}>
                     <img src={reply.author?.avatar || 'https://via.placeholder.com/40'} className="w-6 h-6 rounded-full object-cover" alt="User" />
                 </Link>
@@ -375,7 +382,7 @@ const RecipeDetail = () => {
             setReviews(res.data.data);
         } catch {}
     };
-    
+
     const handleLikeReply = async (reviewId, replyId) => {
         try {
             await api.post(`/reviews/${reviewId}/replies/${replyId}/like`);
