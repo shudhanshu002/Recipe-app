@@ -2,16 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { Bell, Heart, UserPlus, MessageCircle, Search, Filter } from 'lucide-react';
 import api from '../lib/axios';
 import useThemeStore from '../store/useThemeStore';
-import useNotificationStore from '../store/useNotificationStore'; // ✅ Import store
+import useNotificationStore from '../store/useNotificationStore'; 
 import { formatRelativeDate } from '../utils/formatDate';
 import { Link } from 'react-router-dom';
+import NotificationSkeleton from '../components/skeletons/NotificationSkeleton';
 
 const Notifications = () => {
     const [allNotifications, setAllNotifications] = useState([]); // Store full list
     const [filteredNotifications, setFilteredNotifications] = useState([]); // Store filtered list
     const [loading, setLoading] = useState(true);
-    const { isDarkMode } = useThemeStore();
-    const { setUnreadCount } = useNotificationStore(); // ✅ Get setter
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
+    const { setUnreadCount } = useNotificationStore(); 
 
     // Filter States
     const [search, setSearch] = useState('');
@@ -27,7 +29,7 @@ const Notifications = () => {
             // Mark as read logic
             if (response.data.data.unreadCount > 0) {
                 await api.patch('/notifications/read/all');
-                setUnreadCount(0); // ✅ Instantly update Navbar badge
+                setUnreadCount(0); 
 
                 // Update local UI state to show read
                 const readNotifs = notifs.map((n) => ({ ...n, isRead: true }));
@@ -45,7 +47,7 @@ const Notifications = () => {
         fetchNotifications();
     }, []);
 
-    // ✅ Search & Filter Logic
+    // Search & Filter Logic
     useEffect(() => {
         let result = allNotifications;
 
@@ -89,7 +91,7 @@ const Notifications = () => {
                     <span>
                         <span className="font-bold">{senderName}</span> liked your recipe{' '}
                         {n.recipe && (
-                            <Link to={`/recipes/${n.recipe._id}`} className="font-bold hover:underline ml-1 text-primary">
+                            <Link to={`/recipes/${n.recipe._id}`} className="font-bold hover:underline ml-1 text-[#f97316]">
                                 {n.recipe.title}
                             </Link>
                         )}
@@ -106,7 +108,7 @@ const Notifications = () => {
                     <span>
                         <span className="font-bold">{senderName}</span> commented on{' '}
                         {n.recipe && (
-                            <Link to={`/recipes/${n.recipe._id}`} className="font-bold hover:underline ml-1 text-primary">
+                            <Link to={`/recipes/${n.recipe._id}`} className="font-bold hover:underline ml-1 text-[#f97316]">
                                 {n.recipe.title}
                             </Link>
                         )}
@@ -123,10 +125,10 @@ const Notifications = () => {
     const cardBg = isDarkMode ? 'bg-[#1e1e1e] border-gray-700' : 'bg-white border-gray-200';
     const inputBg = isDarkMode ? 'bg-[#2d2d2d] border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900';
 
-    if (loading) return <div className={`text-center py-20 ${textColor}`}>Loading...</div>;
+    if (loading) return <NotificationSkeleton/>;
 
     return (
-        <div className="max-w-3xl mx-auto space-y-6 mb-20">
+        <div className="max-w-3xl mx-auto space-y-6 mb-20 font-dancing">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <h1 className={`text-3xl font-bold flex items-center gap-3 ${textColor}`}>
                     <Bell /> Notifications
@@ -139,7 +141,7 @@ const Notifications = () => {
                         placeholder="Search..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className={`w-full pl-9 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm ${inputBg}`}
+                        className={`w-full pl-9 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-[#f97316]/50 text-sm ${inputBg}`}
                     />
                 </div>
             </div>
@@ -152,7 +154,7 @@ const Notifications = () => {
                         onClick={() => setFilterType(type)}
                         className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-colors ${
                             filterType === type
-                                ? 'bg-primary text-white border-primary'
+                                ? 'bg-[#f97316] text-white border-[#f97316]'
                                 : `${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`
                         }`}
                     >
@@ -165,10 +167,10 @@ const Notifications = () => {
                 {filteredNotifications.length > 0 ? (
                     filteredNotifications.map((notif) => (
                         <div key={notif._id} className={`p-4 flex items-start gap-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50`}>
-                            <Link to={`/profile/${notif.sender?.username}`} className="flex-shrink-0">
+                            <Link to={`/profile/${notif.sender?.username}`} className="shrink-0">
                                 <img
                                     src={notif.sender?.avatar || 'https://via.placeholder.com/40'}
-                                    className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-600"
+                                    className={`w-10 h-10 rounded-full object-cover border ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}
                                     alt="Sender"
                                 />
                             </Link>
