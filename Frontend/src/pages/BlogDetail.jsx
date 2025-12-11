@@ -1,63 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+
+// api
 import { blogApi } from '../api/blogs';
+
+// store
 import useThemeStore from '../store/useThemeStore';
 import useAuthStore from '../store/useAuthStore';
-import { formatRelativeDate } from '../utils/formatDate';
-import { Loader2, MessageCircle, Heart, Send, ThumbsUp } from 'lucide-react';
-import parse from 'html-react-parser'; 
+import BlogDetailSkeleton from '../components/skeletons/BlogDetailSkeleton';
+import CommentThread from '../components/CommentThread';
 
-const CommentThread = ({ comment, blogId, depth = 0, activeReplyId, setActiveReplyId, onReply, onLike, user, styles }) => {
-    // ... existing logic ...
-    // Just pasting the return for context, use full code from previous step
-    return (
-        <div className={`mt-4 ${depth > 0 ? 'pl-4 border-l-2 border-gray-200 dark:border-gray-700' : ''}`}>
-            <div className="flex gap-3">
-                <img src={comment.author?.avatar || 'https://via.placeholder.com/40'} className="w-8 h-8 rounded-full object-cover" alt="User" />
-                <div className="flex-1">
-                    <div className={`p-3 rounded-xl rounded-tl-none ${styles.cardBg}`}>
-                        <div className="flex justify-between items-center mb-1">
-                            <span className={`font-bold text-sm ${styles.textColor}`}>{comment.author?.username}</span>
-                            <span className="text-xs text-gray-400">{formatRelativeDate(comment.createdAt)}</span>
-                        </div>
-                        <p className={`text-sm ${styles.subText}`}>{comment.content}</p>
-                    </div>
-                    <div className="flex items-center gap-4 mt-1 ml-2">
-                        <button
-                            onClick={() => onLike(comment._id)}
-                            className={`flex items-center gap-1 text-xs transition-colors ${comment.likes.includes(user?._id) ? 'text-red-500 font-bold' : 'text-gray-500 hover:text-red-500'}`}
-                        >
-                            <Heart size={12} fill={comment.likes.includes(user?._id) ? 'currentColor' : 'none'} /> {comment.likes.length || 0}
-                        </button>
-                        <button onClick={() => setActiveReplyId(activeReplyId === comment._id ? null : comment._id)} className="text-xs text-gray-500 hover:text-primary font-medium">
-                            Reply
-                        </button>
-                    </div>
-                    {/* Reply Input Logic ... */}
-                    {comment.children &&
-                        comment.children.map((child) => (
-                            <CommentThread
-                                key={child._id}
-                                comment={child}
-                                blogId={blogId}
-                                depth={depth + 1}
-                                activeReplyId={activeReplyId}
-                                setActiveReplyId={setActiveReplyId}
-                                onReply={onReply}
-                                onLike={onLike}
-                                user={user}
-                                styles={styles}
-                            />
-                        ))}
-                </div>
-            </div>
-        </div>
-    );
-};
+// utils
+import { formatRelativeDate } from '../utils/formatDate';
+import parse from 'html-react-parser'; 
+import { toast, ToastContainer } from 'react-toastify';
+
 
 const BlogDetail = () => {
     const { id } = useParams();
-    const { isDarkMode } = useThemeStore();
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
     const { user } = useAuthStore();
     const [blog, setBlog] = useState(null);
     const [comments, setComments] = useState([]);
@@ -106,17 +68,19 @@ const BlogDetail = () => {
             setCommentText('');
             refreshData();
         } catch (e) {
-            alert('Login to comment');
+            toast.error('Login to comment');
         }
     };
+
     const handleReply = async (parentId, text) => {
         try {
             await blogApi.addComment(id, { content: text, parentId });
             refreshData();
         } catch (e) {
-            alert('Failed to reply');
+            toast.error('Failed to reply');
         }
     };
+    
     const handleLikeComment = async (commentId) => {
         try {
             await blogApi.toggleCommentLike(commentId);
@@ -136,15 +100,21 @@ const BlogDetail = () => {
         inputBg: isDarkMode ? 'bg-[#2d2d2d] border-gray-600 text-white focus:outline-none' : 'bg-white border-gray-300 text-gray-900 focus:outline-none',
     };
 
-    if (!blog)
+    
+
+    if (loading) {
         return (
-            <div className="text-center py-20">
-                <Loader2 className="animate-spin mx-auto" />
+            <div className={`min-h-screen pt-20 pb-20 ${isDarkMode ? 'bg-[#121212]' : 'bg-white'}`}>
+                <BlogDetailSkeleton />
             </div>
         );
+    }
+
+    if (!blog) return <div>Blog not found</div>;
 
     return (
-        <div className="max-w-3xl mx-auto mb-20">
+        <div className="max-w-3xl mx-auto mb-20 font-dancing">
+            <ToastContainer />
             {blog.coverImage && <img src={blog.coverImage} className="w-full h-64 object-cover rounded-2xl mb-8 shadow-md" alt="Cover" />}
 
             <div className="mb-6">
@@ -176,7 +146,7 @@ const BlogDetail = () => {
                             placeholder="Write a comment..."
                             className={`flex-1 px-4 py-2 rounded-lg border focus:outline-none ${styles.inputBg}`}
                         />
-                        <button onClick={handlePostComment} className="px-4 py-2 bg-primary text-white rounded-lg font-bold">
+                        <button onClick={handlePostComment} className="px-4 py-2 bg-[#f97316] text-white rounded-lg font-bold">
                             Post
                         </button>
                     </div>
