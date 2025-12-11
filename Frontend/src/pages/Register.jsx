@@ -130,12 +130,14 @@ const Register = () => {
         inputRefs.current[nextIndex].focus();
     };
 
+    const base_url = import.meta.env.VITE_API_URL;
+
     // Social Handlers
     const handleGoogleLogin = () => {
-        window.location.href = 'http://localhost:5000/api/v1/users/google';
+        window.location.href = `${base_url}/users/google`;
     };
     const handleFacebookLogin = () => {
-        window.location.href = 'http://localhost:5000/api/v1/users/facebook';
+        window.location.href = `${base_url}/users/facebook`;
     };
 
     // Theme Styles

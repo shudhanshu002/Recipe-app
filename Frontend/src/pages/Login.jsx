@@ -48,12 +48,14 @@ const Login = () => {
         }
     };
 
+    const base_url = import.meta.env.VITE_API_URL;
+
     const handleGoogleLogin = () => {
-        window.location.href = 'http://localhost:5000/api/v1/users/google';
+        window.location.href = `${base_url}/users/google`;
     };
 
     const handleFacebookLogin = () => {
-        window.location.href = 'http://localhost:5000/api/v1/users/facebook';
+        window.location.href = `${base_url}/users/facebook`;
     };
 
     const containerBg = isDarkMode ? 'bg-[#121212]' : 'bg-gray-50';
