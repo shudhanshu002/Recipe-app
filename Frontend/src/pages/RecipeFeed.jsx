@@ -1,19 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Loader2, ArrowLeft, Search, ChefHat } from 'lucide-react';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
+// api
 import { recipeApi } from '../api/recipes';
-import RecipeCard from '../components/RecipeCard';
-import RecipeDetailPanel from '../components/RecipeDetailPanel';
+
+// store
 import useThemeStore from '../store/useThemeStore';
 import useAuthStore from '../store/useAuthStore';
+
+// component
+import RecipeCard from '../components/RecipeCard';
+import RecipeDetailPanel from '../components/RecipeDetailPanel';
+import RecipeCardSkeleton from '../components/skeletons/RecipeCardSkeleton';
+
+// icons & toast
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { Loader2, ArrowLeft, Search, ChefHat } from 'lucide-react';
 
 const RecipeFeed = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { isDarkMode } = useThemeStore();
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
     const { user } = useAuthStore();
 
     const [recipes, setRecipes] = useState([]);
@@ -43,7 +52,7 @@ const RecipeFeed = () => {
         const fetchFilteredRecipes = async () => {
             setLoading(true);
             try {
-                // ✅ CLEAN PARAMETERS: Only add if they exist and are valid
+                // Only add if they exist and are valid
                 const params = { limit: 50 };
 
                 if (category && category !== 'null') params.category = category;
@@ -75,15 +84,19 @@ const RecipeFeed = () => {
 
     const textColor = isDarkMode ? 'text-white' : 'text-gray-900';
     const subText = isDarkMode ? 'text-gray-400' : 'text-gray-600';
-    const bgClass = isDarkMode ? 'bg-[#121212]' : 'bg-gray-50';
+    const bgClass = isDarkMode ? 'bg-[#121212]' : 'bg-gray-200';
 
     return (
-        <div className={`min-h-screen ${bgClass} pb-20`}>
+        <div className={`min-h-screen ${bgClass} pb-20 font-dancing mt-3 rounded-4xl`}>
             <ToastContainer />
 
             {/* Header */}
-            <div className={`sticky top-16 z-30 px-6 py-4 flex items-center gap-4 border-b backdrop-blur-md ${isDarkMode ? 'bg-[#121212]/90 border-gray-800' : 'bg-white/90 border-gray-200'}`}>
-                <button onClick={() => navigate(-1)} className={`p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors ${textColor}`}>
+            <div
+                className={`sticky top-16 z-30 px-6 py-4 flex items-center gap-4 border-b backdrop-blur-md ${
+                    isDarkMode ? 'bg-[#121212]/90 border-gray-800' : 'bg-white/90 border-gray-200'
+                } rounded-4xl`}
+            >
+                <button onClick={() => navigate(-1)} className={`p-2 rounded-full transition-colors ${textColor} ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-200'}`}>
                     <ArrowLeft size={24} />
                 </button>
                 <div>
@@ -98,8 +111,10 @@ const RecipeFeed = () => {
                     {/* List */}
                     <div className={`flex-1 transition-all duration-300 ${selectedRecipeId ? 'hidden md:block md:w-1/2 lg:w-3/5' : 'w-full'}`}>
                         {loading ? (
-                            <div className="flex justify-center py-40">
-                                <Loader2 className="animate-spin text-primary" size={48} />
+                            <div className={`grid gap-6 ${selectedRecipeId ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
+                                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                                    <RecipeCardSkeleton key={i} />
+                                ))}
                             </div>
                         ) : recipes.length > 0 ? (
                             <div className={`grid gap-6 ${selectedRecipeId ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
@@ -111,7 +126,7 @@ const RecipeFeed = () => {
                             <div className={`text-center py-40 rounded-xl border-2 border-dashed ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                                 <Search className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                                 <p className={subText}>No recipes found for this category.</p>
-                                <button onClick={() => navigate('/')} className="mt-4 text-primary font-bold hover:underline">
+                                <button onClick={() => navigate('/')} className="mt-4 text-[#f97316] font-bold hover:underline">
                                     Back to Home
                                 </button>
                             </div>
