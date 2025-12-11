@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema(
@@ -73,10 +73,30 @@ const userSchema = new mongoose.Schema(
         accessToken: {
             type: String,
         },
+        isPremium: {
+            type: Boolean,
+            default: false,
+        },
+        subscriptionPlan: {
+            type: String, // 'monthly' or 'yearly'
+            default: null,
+        },
+        subscriptionExpiry: {
+            type: Date, // The date when premium ends
+            default: null,
+        },
+        subscriptionDate: {
+            type: Date,
+        },
         about: { type: String, trim: true, maxLength: 500 },
         isSubscriptionActive: { type: Boolean, default: false },
         subscriptionExpiry: { type: Date },
+        razorpayOrderId: { type: String },
         isFollowingPublic: { type: Boolean, default: true },
+        isNewsletterSubscribed: {
+            type: Boolean,
+            default: false,
+        },
     },
     { timestamps: true },
 );

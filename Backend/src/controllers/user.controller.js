@@ -5,7 +5,11 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { sendEmail } from '../utils/sendEmail.js';
 import jwt from 'jsonwebtoken';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import { getOtpTemplate } from '../utils/getOTPTemplate.js';
+import mongoose, { isValidObjectId } from 'mongoose'; 
 
+
+// 1. generating tokens
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
         const user = await User.findById(userId);
@@ -23,11 +27,14 @@ const generateAccessAndRefreshTokens = async (userId) => {
     }
 };
 
+// 2. social login handker
 const handleSocialLogin = asyncHandler(async (req, res) => {
     const user = req.user;
 
     const accessToken = user.generateAccessToken();
     const refreshToken = user.generateRefreshToken();
+
+
 
     user.accessToken = accessToken;
     user.refreshToken = refreshToken;
@@ -35,13 +42,16 @@ const handleSocialLogin = asyncHandler(async (req, res) => {
 
     const options = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production', 
+        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     };
 
-    return res.status(200).cookie('accessToken', accessToken, options).cookie('refreshToken', refreshToken, options).redirect('http://localhost:5173');
+    const clientURL = process.env.CLIENT_URL;
+
+    return res.status(200).cookie('accessToken', accessToken, options).cookie('refreshToken', refreshToken, options).redirect(clientURL);
 });
 
+// 3. normal register
 const registerUser = asyncHandler(async (req, res) => {
     const { email, username, password } = req.body;
 
@@ -80,13 +90,15 @@ const registerUser = asyncHandler(async (req, res) => {
 
     await sendEmail({
         email: user.email,
-        subject: 'Recipe App - Verify your account',
-        message: `your Verification code is: ${otp}. It expires in 10 minutes.`,
+        subject: 'Welcome to the Zaika_Vault Kitchen! 👨‍🍳 - Verify your account',
+        html: getOtpTemplate(otp),
+        message: `Your Verification code is: ${otp}. It expires in 10 minutes.`,
     });
 
     return res.status(200).json(new ApiResponse(200, { userId: user._id, email: user.email }, 'OTP sent to email. Please verify.'));
 });
 
+// 4. otp sending
 const verifyUserOtp = asyncHandler(async (req, res) => {
     const { email, otp } = req.body;
 
@@ -124,6 +136,7 @@ const verifyUserOtp = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, {}, 'Account verified successfully. You can now login.'));
 });
 
+// 5. login--
 const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
@@ -155,7 +168,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const options = {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
     };
 
     return res
@@ -175,6 +188,7 @@ const loginUser = asyncHandler(async (req, res) => {
         );
 });
 
+// 6. logoutuser--
 const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(
         req.user._id,
@@ -198,11 +212,11 @@ const logoutUser = asyncHandler(async (req, res) => {
     return res.status(200).clearCookie('accessToken', options).clearCookie('refreshToken', options).json(new ApiResponse(200, {}, 'USer logged out'));
 });
 
+// 7. refreshing token
 const refreshAccessToken = asyncHandler(async (req, res) => {
     const cookies = req.cookies || {};
     const body = req.body || {};
 
-    // Now we can safely access .refreshToken without crashing
     const incomingRefreshToken = cookies.refreshToken || body.refreshToken;
 
     if (!incomingRefreshToken) {
@@ -239,6 +253,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 });
 
+// 8. update avatar
 const updateUserAvatar = asyncHandler(async (req, res) => {
     const avatarLocalPath = req.file?.path;
 
@@ -263,6 +278,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, user, 'Avatar updated successfully'));
 });
 
+// 9. updating account details
 const updateAccountDetails = asyncHandler(async (req, res) => {
     const { about, title, isFollowingPublic } = req.body;
 
@@ -280,6 +296,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, user, 'Account details updated successfully'));
 });
 
+// 10. update user cover image
 const updateUserCoverImage = asyncHandler(async (req, res) => {
     const coverLocalPath = req.file?.path;
 
@@ -304,4 +321,123 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, user, 'Cover Image uploaded successfully'));
 });
 
-export { registerUser, loginUser, verifyUserOtp, logoutUser, handleSocialLogin, refreshAccessToken, updateUserAvatar, updateAccountDetails, updateUserCoverImage };
+// 11. fetching top chef
+const getTopChefs = asyncHandler(async (req, res) => {
+    const users = await User.aggregate([
+        {
+            $lookup: {
+                from: 'subscriptions',
+                localField: '_id',
+                foreignField: 'channel',
+                as: 'subscribers',
+            },
+        },
+        {
+            $addFields: {
+                subscribersCount: { $size: '$subscribers' },
+            },
+        },
+        { $sort: { subscribersCount: -1 } },
+        { $limit: 20 },
+        {
+            $project: {
+                username: 1,
+                avatar: 1,
+                title: 1,
+                subscribersCount: 1,
+            },
+        },
+    ]);
+
+    return res.status(200).json(new ApiResponse(200, users, 'Community fetched'));
+});
+
+// 12. fetching current user
+const getCurrentUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user?._id).select('-password');
+
+    if (!user) {
+        throw new ApiError(404, 'User not found');
+    }
+
+    if (user.isPremium && user.subscriptionExpiry) {
+        if (new Date() > user.subscriptionExpiry) {
+            console.log(`[Auto-Expire] Subscription expired for ${user.username}. Revoking status.`);
+
+            user.isPremium = false;
+            user.subscriptionPlan = null;
+            user.subscriptionExpiry = null;
+            await user.save();
+        }
+    }
+
+    return res.status(200).json(new ApiResponse(200, user, 'User details fetched successfully'));
+});
+
+// 13. fetching channel
+const getUserChannelProfileById = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+
+    if (!userId || !isValidObjectId(userId)) {
+        throw new ApiError(400, 'Invalid User ID provided');
+    }
+
+    const channel = await User.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(userId),
+            },
+        },
+        {
+            $lookup: {
+                from: 'subscriptions',
+                localField: '_id',
+                foreignField: 'channel',
+                as: 'subscribers',
+            },
+        },
+        {
+            $lookup: {
+                from: 'subscriptions',
+                localField: '_id',
+                foreignField: 'subscriber',
+                as: 'subscribedTo',
+            },
+        },
+        {
+            $addFields: {
+                subscribersCount: { $size: '$subscribers' },
+                channelsSubscribedToCount: { $size: '$subscribedTo' },
+                isSubscribed: {
+                    $cond: {
+                        if: { $in: [req.user?._id, '$subscribers.subscriber'] },
+                        then: true,
+                        else: false,
+                    },
+                },
+            },
+        },
+        {
+            $project: {
+                username: 1,
+                fullName: 1,
+                email: 1,
+                avatar: 1,
+                coverImage: 1,
+                bio: 1,
+                location: 1,
+                subscribersCount: 1,
+                channelsSubscribedToCount: 1,
+                isSubscribed: 1,
+            },
+        },
+    ]);
+
+    if (!channel?.length) {
+        throw new ApiError(404, 'Chef not found');
+    }
+
+    return res.status(200).json(new ApiResponse(200, channel[0], 'Chef profile fetched successfully'));
+});
+
+export { registerUser, loginUser, verifyUserOtp, logoutUser, handleSocialLogin, refreshAccessToken, updateUserAvatar, updateAccountDetails, updateUserCoverImage, getTopChefs, getCurrentUser, getUserChannelProfileById };

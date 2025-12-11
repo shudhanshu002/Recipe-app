@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, CheckCircle, Circle, ShoppingBag } from 'lucide-react';
 import api from '../lib/axios';
 import useThemeStore from '../store/useThemeStore';
+import { Plus, Trash2, CheckCircle, Circle, ShoppingBag } from 'lucide-react';
 
 const ShoppingList = () => {
     const [items, setItems] = useState([]);
     const [newItem, setNewItem] = useState('');
     const [qty, setQty] = useState('');
-    const { isDarkMode } = useThemeStore();
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
 
     useEffect(() => {
         api.get('/shoppinglist')
@@ -39,7 +40,7 @@ const ShoppingList = () => {
     const inputBg = isDarkMode ? 'bg-transparent text-white' : 'bg-transparent text-gray-900';
 
     return (
-        <div className="max-w-2xl mx-auto space-y-8 mb-10">
+        <div className="max-w-2xl mx-auto space-y-8 mb-10 font-dancing">
             <h1 className={`text-3xl font-bold flex items-center gap-3 ${textColor}`}>
                 <ShoppingBag /> Shopping List
             </h1>
@@ -52,7 +53,7 @@ const ShoppingList = () => {
                     placeholder="Qty"
                     className={`w-24 px-4 py-2 border-l focus:outline-none ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} ${inputBg}`}
                 />
-                <button type="submit" className="p-2 bg-primary text-white rounded-lg">
+                <button type="submit" className="p-2 bg-[#f97316] text-white rounded-lg">
                     <Plus />
                 </button>
             </form>

@@ -3,7 +3,7 @@ import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
-
+// 1. getcusine stat
 const getCuisineStats = asyncHandler(async (req, res)=> {
     const cuisines = await Recipe.aggregate([
         {
@@ -18,7 +18,7 @@ const getCuisineStats = asyncHandler(async (req, res)=> {
     return res.status(200).json(new ApiResponse(200, cuisines, "Cuisine stats fetched successfully"));
 });
 
-
+// 2. get ingrdient stats
 const getIngredientStats = asyncHandler(async (req, res)=> {
     const ingredients = await Recipe.aggregate([
         {
@@ -34,7 +34,7 @@ const getIngredientStats = asyncHandler(async (req, res)=> {
     return res.status(200).json(new ApiResponse(200, ingredients, 'Ingredient stats fetched'));
 });
 
-
+// 3. get dashboard stat
 const getDashboardStats = asyncHandler(async (req, res) => {
     const totalRecipes = await Recipe.countDocuments();
     const totalUsers = await User.countDocuments();

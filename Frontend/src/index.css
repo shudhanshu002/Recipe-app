@@ -1,1 +1,191 @@
 @import 'tailwindcss';
+
+/* ========================= */
+/*       BITTER FONT         */
+/* ========================= */
+
+/* Thin */
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-Thin.woff2') format('woff2');
+  font-weight: 100;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-ThinItalic.woff2') format('woff2');
+  font-weight: 100;
+  font-style: italic;
+}
+
+/* Light */
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-LightItalic.woff2') format('woff2');
+  font-weight: 300;
+  font-style: italic;
+}
+
+/* Regular */
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-Italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+}
+
+/* Medium */
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-MediumItalic.woff2') format('woff2');
+  font-weight: 500;
+  font-style: italic;
+}
+
+/* SemiBold */
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-SemiBoldItalic.woff2') format('woff2');
+  font-weight: 600;
+  font-style: italic;
+}
+
+/* Bold */
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-BoldItalic.woff2') format('woff2');
+  font-weight: 700;
+  font-style: italic;
+}
+
+/* ExtraBold */
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-ExtraBoldItalic.woff2') format('woff2');
+  font-weight: 800;
+  font-style: italic;
+}
+
+/* Black */
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Bitter';
+  src: url('../assets/fonts/Bitter/Bitter-BlackItalic.woff2') format('woff2');
+  font-weight: 900;
+  font-style: italic;
+}
+
+
+/* ========================= */
+/*    DANCING SCRIPT FONT     */
+/* ========================= */
+
+/* Regular */
+@font-face {
+  font-family: 'Dancing Script';
+  src: url('../assets/fonts/DancingScript/DancingScript-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Play';
+  src: url('../assets/fonts/DancingScript/PlaywriteNO-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Medium */
+@font-face {
+  font-family: 'Dancing Script';
+  src: url('../assets/fonts/DancingScript/DancingScript-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+/* SemiBold */
+@font-face {
+  font-family: 'Dancing Script';
+  src: url('../assets/fonts/DancingScript/DancingScript-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* Bold */
+@font-face {
+  font-family: 'Dancing Script';
+  src: url('../assets/fonts/DancingScript/DancingScript-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Black Drama Demo';
+  src: url('/src/assets/fonts/Black Drama Demo.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+
+
+.font-bitter { font-family: 'Bitter', serif; }
+.font-dancing { font-family: 'Dancing Script', cursive; }
+.font-cursive { font-family: cursive;}
+.font-recur {font-family: 'Black Drama Demo','Dancing Script';}
+
+body {
+  font-family: 'Bitter', serif;
+}
+
+/* h1, h2 {
+  font-family: 'Dancing Script', cursive;
+} */
+
+/* strong {
+  font-weight: 700; 
+} */
+
+/* em {
+  font-style: italic;
+} */

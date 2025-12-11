@@ -18,7 +18,7 @@ const notificationSchema = new mongoose.Schema(
         },
         recipe: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Recipe" // Optional: linked recipe
+            ref: "Recipe" 
         },
         isRead: {
             type: Boolean,

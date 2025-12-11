@@ -14,6 +14,8 @@ const useAuthStore = create(
                 set((state) => ({
                     user: { ...state.user, ...data },
                 })),
+
+            setUser: (userData) => set({ user: userData }),
         }),
         {
             name: 'auth-storage',

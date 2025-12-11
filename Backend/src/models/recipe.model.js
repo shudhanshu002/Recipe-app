@@ -2,73 +2,35 @@ import mongoose from 'mongoose';
 
 const recipeSchema = new mongoose.Schema(
     {
-        title: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-        description: {
-            type: String,
-            required: true,
-        },
-        ingredients: [
-            {
-                type: String,
-                required: true,
-            },
-        ],
-        instructions: {
-            type: String,
-            required: true,
-        },
-        difficulty: {
-            type: String,
-            enum: ['Easy', 'Medium', 'Hard'],
-            required: true,
-        },
-        cuisine: {
-            type: String,
-            required: true,
-            index: true,
-        },
+        title: { type: String, required: true, trim: true },
+        description: { type: String, required: true },
+        ingredients: [{ type: String, required: true }],
+        instructions: { type: String, required: true },
+        difficulty: { type: String, enum: ['Easy', 'Medium', 'Hard'], required: true },
+        cuisine: { type: String, required: true, index: true },
+        mainIngredient: { type: String, required: true, index: true },
         images: {
             type: [String],
-            validate: [(val) => val.length <= 10, '{PATH} exceeds the limit of 10 images'],
-        },
-        createdBy: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
+            validate: [(val) => val.length <= 10, '{PATH} exceeds limit of 10'],
             required: true,
         },
-        averageRating: {
-            type: Number,
-            default: 0,
-        },
-        videoUrl: {
-            type: String,
-        },
-        mainIngredient: {
-            type: String,
-            required: true,
-            index: true,
-        },
-        isPremium: {
-            type: Boolean,
-            default: false,
-        },
-        dietaryTags: {
-            type: [String], // ["Vegan", "Gluten-Free", "Keto"]
-            index: true,
-        },
-        cookingTime: {
-            type: Number, // In minutes
-            default: 30,
-        },
-        calories: {
-            type: Number,
-        },
+        videoUrl: { type: String },
+        videoThumbnail: { type: String },
+        isPremium: { type: Boolean, default: false },
+        createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        averageRating: { type: Number, default: 0 },
+        dietaryTags: { type: [String], index: true },
+        cookingTime: { type: Number, default: 30 },
+        calories: { type: Number },
+        isVegetarian: { type: Boolean, default: true, required: true },
+
+        viewedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+
+        views: { type: Number, default: 0 },
     },
-    { timestamps: true },
+    {
+        timestamps: true,
+    },
 );
 
 export const Recipe = mongoose.model('Recipe', recipeSchema);

@@ -9,7 +9,6 @@ const useThemeStore = create(
             toggleTheme: () =>
                 set((state) => {
                     const newTheme = state.theme === 'light' ? 'dark' : 'light';
-
                     
                     const root = window.document.documentElement;
                     if (newTheme === 'dark') {

@@ -6,7 +6,7 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
 
-// 1. ADD REVIEW
+// 1. ADD OR UPDATE REVIEW
 const addReview = asyncHandler(async (req, res) => {
     const { recipeId } = req.params;
     const { content, rating } = req.body;
@@ -19,8 +19,8 @@ const addReview = asyncHandler(async (req, res) => {
         if (uploaded) mediaUrl = uploaded.url;
     }
 
-    if (!content || !rating) {
-        throw new ApiError(400, 'Content and rating are required');
+    if (!rating && !content) {
+        throw new ApiError(400, 'Content or rating is required');
     }
 
     const recipe = await Recipe.findById(recipeId);
@@ -28,37 +28,54 @@ const addReview = asyncHandler(async (req, res) => {
         throw new ApiError(404, 'Recipe not found');
     }
 
-    const review = await Review.create({
-        content,
-        rating,
-        recipe: recipeId,
-        author: req.user._id,
-        media: mediaUrl,
-        reactions: [],
-    });
+    if (recipe.createdBy.toString() === req.user._id.toString()) {
+        throw new ApiError(403, 'You cannot rate your own recipe');
+    }
 
-    // Update Avg Rating
-    const stats = await Review.aggregate([{ $match: { recipe: recipe._id } }, { $group: { _id: '$recipe', avgRating: { $avg: '$rating' } } }]);
+    let review = await Review.findOne({ recipe: recipeId, author: req.user._id });
+
+    if (review) {
+        if (rating) review.rating = rating;
+        if (content) review.content = content;
+        if (mediaUrl) review.media = mediaUrl;
+        await review.save();
+    } else {
+        if (!rating && !content) throw new ApiError(400, 'Rating is required for new review');
+
+        review = await Review.create({
+            content: content || 'Rated via star click',
+            rating: rating || 0,
+            recipe: recipeId,
+            author: req.user._id,
+            media: mediaUrl,
+            reactions: [],
+        });
+
+        // Notify Author
+        if (recipe.createdBy.toString() !== req.user._id.toString()) {
+            try {
+                await Notification.create({
+                    recipient: recipe.createdBy,
+                    sender: req.user._id,
+                    type: 'COMMENT',
+                    recipe: recipe._id,
+                });
+            } catch (e) {
+                console.log('Notification failed', e);
+            }
+        }
+    }
+
+    // Update Average Rating
+    const stats = await Review.aggregate([{ $match: { recipe: recipe._id, rating: { $gt: 0 } } }, { $group: { _id: '$recipe', avgRating: { $avg: '$rating' } } }]);
 
     if (stats.length > 0) {
-        recipe.averageRating = stats[0].avgRating;
+        recipe.averageRating = parseFloat(stats[0].avgRating.toFixed(1));
         await recipe.save({ validateBeforeSave: false });
     }
 
-    // Notify Author
-    if (recipe.createdBy.toString() !== req.user._id.toString()) {
-        try {
-            await Notification.create({
-                recipient: recipe.createdBy,
-                sender: req.user._id,
-                type: 'COMMENT',
-                recipe: recipe._id,
-            });
-        } catch (e) {}
-    }
-
     const populatedReview = await Review.findById(review._id).populate('author', 'username avatar');
-    return res.status(201).json(new ApiResponse(201, populatedReview, 'Review added'));
+    return res.status(200).json(new ApiResponse(200, populatedReview, review ? 'Review updated' : 'Review added'));
 });
 
 // 2. ADD REPLY
@@ -74,53 +91,67 @@ const addReply = asyncHandler(async (req, res) => {
     }
 
     if (!content) throw new ApiError(400, 'Content is required');
-
     const review = await Review.findById(reviewId);
     if (!review) throw new ApiError(404, 'Review not found');
 
-    review.replies.push({
+    const reply = {
         content,
         author: req.user._id,
         media: mediaUrl,
         parentId: parentId || null,
-        reactions: [],
+        likes: [],
         createdAt: new Date(),
-    });
+    };
 
+    review.replies.push(reply);
     await review.save();
+
+    if (review.author.toString() !== req.user._id.toString()) {
+        try {
+            await Notification.create({
+                recipient: review.author,
+                sender: req.user._id,
+                type: 'COMMENT', 
+                recipe: review.recipe,
+            });
+        } catch (e) {}
+    }
 
     return res.status(201).json(new ApiResponse(201, review, 'Reply added'));
 });
 
-// 3. TOGGLE REVIEW REACTION
-const toggleReviewReaction = asyncHandler(async (req, res) => {
+// 3. TOGGLE REVIEW LIKE (Main Comment)
+const toggleReviewLike = asyncHandler(async (req, res) => {
     const { reviewId } = req.params;
-    const { emoji } = req.body;
     const userId = req.user._id;
 
     const review = await Review.findById(reviewId);
     if (!review) throw new ApiError(404, 'Review not found');
 
-    const existingIndex = review.reactions.findIndex((r) => r.user.toString() === userId.toString());
-
-    if (existingIndex > -1) {
-        if (review.reactions[existingIndex].emoji === emoji) {
-            review.reactions.splice(existingIndex, 1);
-        } else {
-            review.reactions[existingIndex].emoji = emoji;
-        }
+    const isLiked = review.likes.includes(userId);
+    if (isLiked) {
+        review.likes.pull(userId);
     } else {
-        review.reactions.push({ user: userId, emoji });
+        review.likes.push(userId);
+        if (review.author.toString() !== userId.toString()) {
+            try {
+                await Notification.create({
+                    recipient: review.author,
+                    sender: userId,
+                    type: 'LIKE_RECIPE',
+                    recipe: review.recipe,
+                });
+            } catch (e) {}
+        }
     }
 
     await review.save();
-    return res.status(200).json(new ApiResponse(200, review.reactions, 'Reaction updated'));
+    return res.status(200).json(new ApiResponse(200, { isLiked: !isLiked, likesCount: review.likes.length }, 'Like toggled'));
 });
 
-// 4. TOGGLE REPLY REACTION
-const toggleReplyReaction = asyncHandler(async (req, res) => {
+// 4. TOGGLE REPLY LIKE
+const toggleReplyLike = asyncHandler(async (req, res) => {
     const { reviewId, replyId } = req.params;
-    const { emoji } = req.body;
     const userId = req.user._id;
 
     const review = await Review.findById(reviewId);
@@ -129,46 +160,26 @@ const toggleReplyReaction = asyncHandler(async (req, res) => {
     const reply = review.replies.id(replyId);
     if (!reply) throw new ApiError(404, 'Reply not found');
 
-    const existingIndex = reply.reactions.findIndex((r) => r.user.toString() === userId.toString());
-
-    if (existingIndex > -1) {
-        if (reply.reactions[existingIndex].emoji === emoji) {
-            reply.reactions.splice(existingIndex, 1);
-        } else {
-            reply.reactions[existingIndex].emoji = emoji;
-        }
+    const isLiked = reply.likes.includes(userId);
+    if (isLiked) {
+        reply.likes.pull(userId);
     } else {
-        reply.reactions.push({ user: userId, emoji });
+        reply.likes.push(userId);
     }
 
     await review.save();
-    return res.status(200).json(new ApiResponse(200, reply.reactions, 'Reply reaction updated'));
+    return res.status(200).json(new ApiResponse(200, { isLiked: !isLiked, likesCount: reply.likes.length }, 'Reply like toggled'));
 });
 
 // 5. GET REVIEWS
 const getRecipeReviews = asyncHandler(async (req, res) => {
     const { recipeId } = req.params;
-    const { page = 1, limit = 10 } = req.query;
-    const skip = (page - 1) * limit;
-
-    const reviews = await Review.find({ recipe: recipeId })
-        .populate('author', 'username avatar')
-        .populate('replies.author', 'username avatar')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(parseInt(limit));
+    const reviews = await Review.find({ recipe: recipeId }).populate('author', 'username avatar').populate('replies.author', 'username avatar').sort({ createdAt: -1 });
 
     return res.status(200).json(new ApiResponse(200, reviews, 'Reviews fetched'));
 });
 
-// For backward compatibility if frontend still calls toggleReviewLike
-const toggleReviewLike = toggleReviewReaction;
+const toggleReviewReaction = toggleReviewLike;
+const toggleReplyReaction = toggleReplyLike;
 
-export {
-    addReview,
-    getRecipeReviews,
-    addReply,
-    toggleReviewLike, // keeping export to avoid breaking imports
-    toggleReviewReaction,
-    toggleReplyReaction,
-};
+export { addReview, getRecipeReviews, addReply, toggleReviewLike, toggleReplyLike, toggleReviewReaction, toggleReplyReaction };

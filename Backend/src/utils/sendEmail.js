@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-export const sendEmail = async ({email, subject, message}) => {
+export const sendEmail = async ({email, subject, message, html}) => {
     try {
         const transporter = nodemailer.createTransport({
             service: "gmail",
@@ -11,11 +11,12 @@ export const sendEmail = async ({email, subject, message}) => {
         });
 
         const mailOptions = {
-            from : process.env.EMAIL_USER,
+            from: `"Zaika Vault Team" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: subject,
             text: message,
-        }
+            html: html,
+        };
 
         await transporter.sendMail(mailOptions);
         console.log("Email sent Successfully");

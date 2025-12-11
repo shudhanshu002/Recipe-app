@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { Calendar as CalendarIcon, Trash2, ChevronLeft, ChevronRight, Plus, Search, X, Loader2, History, CalendarDays } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/axios';
 import useThemeStore from '../store/useThemeStore';
 import DateStrip from '../components/DateStrip';
+import { Calendar as CalendarIcon, Trash2, ChevronLeft, ChevronRight, Plus, Search, X, Loader2, History, CalendarDays } from 'lucide-react';
+import { toast, ToastContainer } from 'react-toastify';
 
 const MealPlanner = () => {
-    const { isDarkMode } = useThemeStore();
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
     const [view, setView] = useState('week');
 
     const [weeklyPlan, setWeeklyPlan] = useState([]);
@@ -22,7 +24,6 @@ const MealPlanner = () => {
     const [selectedMealType, setSelectedMealType] = useState('Dinner');
     const [addingMeal, setAddingMeal] = useState(false);
 
-    // --- Timezone Safe Date Helper ---
     // Creates a date object that is safe for display in the current timezone
     const getStartOfWeek = (date) => {
         const d = new Date(date);
@@ -40,9 +41,6 @@ const MealPlanner = () => {
 
     const fetchPlan = async () => {
         try {
-            // Use ISO string but be aware backend might need adjustment if it strictly parses UTC
-            // A better approach for querying ranges is sending YYYY-MM-DD strings if the backend supports it,
-            // but sticking to ISO for now as it's standard, just need to ensure the day boundaries are right.
             const startStr = weekDates[0].toISOString();
             const endStr = weekDates[6].toISOString();
 
@@ -128,26 +126,22 @@ const MealPlanner = () => {
             setHistoryPlan((prev) => prev.filter(filterFn));
             setAllMealsForStrip((prev) => prev.filter(filterFn));
         } catch (error) {
-            alert('Failed to delete');
+            toast.error('Failed to delete');
         }
     };
 
-    // ✅ FIXED: Date Timezone Issue
-    // Instead of sending the Date object directly (which might convert to UTC previous day),
-    // we construct a specific "YYYY-MM-DD" string or a timezone-corrected ISO string.
+    
     const handleAddMeal = async (recipeId) => {
         if (!selectedDay) return;
         setAddingMeal(true);
         try {
-            // Create a date string in YYYY-MM-DD format using local time
-            // This prevents the "shifted to yesterday" issue caused by UTC conversion
             const offset = selectedDay.getTimezoneOffset();
             const localDate = new Date(selectedDay.getTime() - offset * 60 * 1000);
-            const dateStr = localDate.toISOString().split('T')[0]; // "2025-11-20"
+            const dateStr = localDate.toISOString().split('T')[0]; 
 
             await api.post('/mealplanner/add', {
                 recipeId,
-                date: dateStr, // Send the plain date string
+                date: dateStr,
                 mealType: selectedMealType,
             });
 
@@ -156,7 +150,7 @@ const MealPlanner = () => {
             setSearchQuery('');
         } catch (error) {
             console.error(error);
-            alert('Failed to add meal');
+            toast.error('Failed to add meal');
         } finally {
             setAddingMeal(false);
         }
@@ -182,18 +176,22 @@ const MealPlanner = () => {
     }, {});
 
     return (
-        <div className="max-w-7xl mx-auto space-y-8 mb-20">
+        <div className="max-w-7xl mx-auto space-y-8 mb-20 font-dancing">
+            <ToastContainer/>
             {/* Header Section */}
             <div className="flex flex-col xl:flex-row justify-between items-center gap-6">
-                <div className="flex-shrink-0 text-center md:text-left">
+                <div className="shrink-0 text-center md:text-left">
                     <h1 className={`text-3xl font-bold ${textColor}`}>Meal Planner</h1>
                     <div className="flex gap-4 mt-2 justify-center md:justify-start">
-                        <button onClick={() => setView('week')} className={`text-sm font-bold flex items-center gap-2 ${view === 'week' ? 'text-primary border-b-2 border-primary' : 'text-gray-400'}`}>
+                        <button
+                            onClick={() => setView('week')}
+                            className={`text-sm font-bold flex items-center gap-2 ${view === 'week' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-gray-400'}`}
+                        >
                             <CalendarDays size={16} /> Weekly Plan
                         </button>
                         <button
                             onClick={() => setView('history')}
-                            className={`text-sm font-bold flex items-center gap-2 ${view === 'history' ? 'text-primary border-b-2 border-primary' : 'text-gray-400'}`}
+                            className={`text-sm font-bold flex items-center gap-2 ${view === 'history' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-gray-400'}`}
                         >
                             <History size={16} /> Past History
                         </button>
@@ -203,7 +201,7 @@ const MealPlanner = () => {
                 <DateStrip plans={allMealsForStrip} onDateClick={handleStripDateClick} />
 
                 {view === 'week' && (
-                    <div className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg border ${cardBg}`}>
+                    <div className={`shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg border ${cardBg}`}>
                         <button onClick={handlePrevWeek} className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${textColor}`}>
                             <ChevronLeft />
                         </button>
@@ -231,8 +229,6 @@ const MealPlanner = () => {
                     {view === 'week' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
                             {weekDates.map((date) => {
-                                // Comparison logic must also be local-time aware
-                                // We compare date strings to avoid time-part issues
                                 const dateStr = date.toDateString();
                                 const meals = weeklyPlan.filter((p) => new Date(p.date).toDateString() === dateStr);
                                 const isSelectedDate = currentDate.toDateString() === dateStr;
@@ -242,15 +238,15 @@ const MealPlanner = () => {
                                     <div
                                         key={date.toISOString()}
                                         className={`h-[350px] flex flex-col p-3 rounded-xl border transition-all duration-300 ${
-                                            isSelectedDate ? 'ring-2 ring-primary border-primary' : isToday ? todayBg : cardBg
+                                            isSelectedDate ? 'ring-2 ring-[#f97316] border-[#f97316]' : isToday ? todayBg : cardBg
                                         }`}
                                     >
                                         <div className={`text-center pb-2 mb-2 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-                                            <span className={`text-sm font-bold block ${isToday ? 'text-primary' : textColor}`}>{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                                            <span className={`text-sm font-bold block ${isToday ? 'text-[#f97316]' : textColor}`}>{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
                                             <span className={`text-xs ${subText}`}>{date.getDate()}</span>
                                         </div>
 
-                                        <div className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-1">
+                                        <div className="flex-1 space-y-2 overflow-y-auto pr-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                                             {meals.map((plan) => (
                                                 <div
                                                     key={plan._id}
@@ -259,7 +255,7 @@ const MealPlanner = () => {
                                                     }`}
                                                 >
                                                     <div className="flex justify-between items-start mb-1">
-                                                        <span className="text-[10px] font-bold text-primary uppercase tracking-wider">{plan.mealType}</span>
+                                                        <span className="text-[10px] font-bold text-[#f97316] uppercase tracking-wider">{plan.mealType}</span>
                                                         <button
                                                             onClick={() => handleDelete(plan._id)}
                                                             className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -283,7 +279,7 @@ const MealPlanner = () => {
                                             className={`mt-2 w-full py-1.5 rounded-lg border-2 border-dashed flex items-center justify-center gap-1 text-xs font-medium transition-colors ${
                                                 isDarkMode
                                                     ? 'border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-300'
-                                                    : 'border-gray-200 text-gray-400 hover:border-primary hover:text-primary'
+                                                    : 'border-gray-200 text-gray-400 hover:border-[#f97316] hover:text-[#f97316]'
                                             }`}
                                         >
                                             <Plus size={14} /> Add
@@ -310,7 +306,7 @@ const MealPlanner = () => {
                                                     <Link to={`/recipes/${plan.recipe?._id}`} className="flex items-center gap-3">
                                                         <img src={plan.recipe?.images?.[0]} className="w-12 h-12 rounded-lg object-cover" alt="Food" />
                                                         <div>
-                                                            <p className={`text-xs font-bold uppercase text-primary mb-0.5`}>{plan.mealType}</p>
+                                                            <p className={`text-xs font-bold uppercase text-[#f97316] mb-0.5`}>{plan.mealType}</p>
                                                             <p className={`text-sm font-medium line-clamp-1 ${textColor}`}>{plan.recipe?.title}</p>
                                                         </div>
                                                     </Link>
@@ -348,7 +344,7 @@ const MealPlanner = () => {
                                         onClick={() => setSelectedMealType(type)}
                                         className={`px-3 py-1 rounded-full text-xs font-bold border ${
                                             selectedMealType === type
-                                                ? 'bg-primary text-white border-primary'
+                                                ? 'bg-[#f97316] text-white border-[#f97316]'
                                                 : `${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-300' : 'bg-gray-100 border-gray-200 text-gray-600'}`
                                         }`}
                                     >
@@ -363,10 +359,10 @@ const MealPlanner = () => {
                                     placeholder="Search recipes..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className={`w-full pl-9 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm ${inputBg}`}
+                                    className={`w-full pl-9 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-[#f97316]/50 text-sm ${inputBg}`}
                                 />
                             </div>
-                            <div className="flex-1 overflow-y-auto max-h-60 space-y-2 custom-scrollbar">
+                            <div className="flex-1 overflow-y-auto max-h-60 space-y-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                                 {searchResults.map((recipe) => (
                                     <button
                                         key={recipe._id}
@@ -378,7 +374,7 @@ const MealPlanner = () => {
                                         <div className="flex-1">
                                             <p className={`text-sm font-medium ${textColor}`}>{recipe.title}</p>
                                         </div>
-                                        {addingMeal && <Loader2 className="animate-spin text-primary" size={16} />}
+                                        {addingMeal && <Loader2 className="animate-spin text-[#f97316]" size={16} />}
                                     </button>
                                 ))}
                             </div>

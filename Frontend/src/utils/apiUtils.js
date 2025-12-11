@@ -1,4 +1,4 @@
-
+// Api error handler
 export class ApiError extends Error {
     constructor(error){
         super();
@@ -10,11 +10,13 @@ export class ApiError extends Error {
 }
 
 
+// success reponse handler
 export const handleSuccessResponse = (response) => {
     return response?.data?.data || response?.data;
 };
 
 
+// error response handler
 export const handleErrorResponse = (error) => {
     throw new ApiError(error);
 };
