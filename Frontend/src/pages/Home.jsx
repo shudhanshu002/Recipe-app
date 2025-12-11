@@ -36,36 +36,13 @@ const POPULAR_CATEGORIES = [
     { id: 'healthy', label: 'Healthy', image: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&q=80', filter: 'healthy' },
 ];
 
-const TIME_CARDS = (isDarkMode) => [
-    {
-        label: 'Speedy Meals',
-        sub: '< 15 Mins',
-        val: 15,
-        color: isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-600',
-        icon: <Zap size={24} />,
-    },
-    {
-        label: 'Casual Cooking',
-        sub: '30 Mins',
-        val: 30,
-        color: isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600',
-        icon: <Clock size={24} />,
-    },
-    {
-        label: 'Gourmet Prep',
-        sub: '60 Mins',
-        val: 60,
-        color: isDarkMode ? 'bg-orange-900/30 text-orange-400' : 'bg-orange-100 text-orange-600',
-        icon: <ChefHat size={24} />,
-    },
-    {
-        label: 'Slow Food',
-        sub: '1 Hr+',
-        val: 120,
-        color: isDarkMode ? 'bg-purple-900/30 text-purple-400' : 'bg-purple-100 text-purple-600',
-        icon: <Flame size={24} />,
-    },
+const TIME_CARDS = [
+    { label: 'Speedy Meals', sub: '< 15 Mins', val: 15, light: 'bg-green-100 text-green-600', dark: 'bg-green-900/30 text-green-400', icon: <Zap size={24} /> },
+    { label: 'Casual Cooking', sub: '30 Mins', val: 30, light: 'bg-blue-100 text-blue-600', dark: 'bg-blue-900/30 text-blue-400', icon: <Clock size={24} /> },
+    { label: 'Gourmet Prep', sub: '60 Mins', val: 60, light: 'bg-orange-100 text-orange-600', dark: 'bg-orange-900/30 text-orange-400', icon: <ChefHat size={24} /> },
+    { label: 'Slow Food', sub: '1 Hr+', val: 120, light: 'bg-purple-100 text-purple-600', dark: 'bg-purple-900/30 text-purple-400', icon: <Flame size={24} /> },
 ];
+
 
 const CUISINE_CARDS = [
     { label: 'Indian', image: 'https://images.unsplash.com/photo-1659716307017-dc91342ec2b8?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW5kaWFuZm9vZHxlbnwwfHwwfHx8MA%3D%3D' },
