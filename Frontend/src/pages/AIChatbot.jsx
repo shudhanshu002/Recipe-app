@@ -5,9 +5,10 @@ import useThemeStore from '../store/useThemeStore';
 import { useLocation } from 'react-router-dom';
 
 const AIChatbot = () => {
-    const { isDarkMode } = useThemeStore();
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
     const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState([{ role: 'system', content: "Hi! I'm YumBot 👨‍🍳. Ask me anything about cooking!" }]);
+    const [messages, setMessages] = useState([{ role: 'system', content: "Hi! I'm ZaikaBot 👨‍🍳. Ask me anything about cooking!" }]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
@@ -33,7 +34,6 @@ const AIChatbot = () => {
         setIsLoading(true);
 
         try {
-            // Context: Pass current page info (e.g., Recipe ID if on detail page)
             const context = location.pathname.includes('/recipes/') ? { recipeId: location.pathname.split('/').pop() } : null;
 
             const response = await api.post('/ai/chat', {
@@ -61,13 +61,13 @@ const AIChatbot = () => {
             {isOpen && (
                 <div className={`w-80 sm:w-96 h-[500px] rounded-2xl shadow-2xl border flex flex-col mb-4 overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-300 ${cardBg}`}>
                     {/* Header */}
-                    <div className="p-4 bg-gradient-to-r from-orange-500 to-pink-500 flex justify-between items-center text-white">
+                    <div className="p-4 bg-linear-to-r from-orange-500 to-pink-500 flex justify-between items-center text-white">
                         <div className="flex items-center gap-2">
                             <div className="p-1.5 bg-white/20 rounded-full">
                                 <ChefHat size={20} />
                             </div>
                             <div>
-                                <h3 className="font-bold text-sm">YumBot Assistant</h3>
+                                <h3 className="font-bold text-sm">ZaikaBot Assistant</h3>
                                 <p className="text-[10px] text-white/80 flex items-center gap-1">
                                     <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" /> Online
                                 </p>
@@ -84,7 +84,7 @@ const AIChatbot = () => {
                             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div
                                     className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
-                                        msg.role === 'user' ? 'bg-primary text-white rounded-br-none' : `${isDarkMode ? 'bg-[#2d2d2d] text-gray-200' : 'bg-gray-100 text-gray-800'} rounded-bl-none`
+                                        msg.role === 'user' ? 'bg-[#f97316] text-white rounded-br-none' : `${isDarkMode ? 'bg-[#2d2d2d] text-gray-200' : 'bg-gray-100 text-gray-800'} rounded-bl-none`
                                     }`}
                                 >
                                     {msg.content}
@@ -104,7 +104,7 @@ const AIChatbot = () => {
                     {/* Input Area */}
                     <form onSubmit={handleSend} className={`p-3 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                         <div
-                            className={`flex items-center gap-2 rounded-full px-4 py-2 border transition-all focus-within:ring-2 focus-within:ring-primary/50 ${inputBg} ${
+                            className={`flex items-center gap-2 rounded-full px-4 py-2 border transition-all focus-within:ring-2 focus-within:ring-[#f97316]/50 ${inputBg} ${
                                 isDarkMode ? 'border-gray-600' : 'border-gray-200'
                             }`}
                         >
@@ -112,7 +112,7 @@ const AIChatbot = () => {
                             <button
                                 type="submit"
                                 disabled={!input.trim() || isLoading}
-                                className="p-1.5 bg-primary text-white rounded-full hover:bg-orange-600 disabled:opacity-50 disabled:hover:bg-primary transition-colors"
+                                className="p-1.5 bg-[#f97316] text-white rounded-full hover:bg-orange-600 disabled:opacity-50 disabled:hover:bg-[#f97316] transition-colors"
                             >
                                 <Send size={14} />
                             </button>
@@ -124,7 +124,7 @@ const AIChatbot = () => {
             {/* Floating Toggle Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`p-4 rounded-full shadow-lg shadow-orange-500/30 transition-all hover:scale-110 active:scale-95 flex items-center justify-center bg-gradient-to-r from-orange-500 to-pink-500 text-white`}
+                className={`p-4 rounded-full shadow-lg shadow-orange-500/30 transition-all hover:scale-110 active:scale-95 flex items-center justify-center bg-linear-to-r from-orange-500 to-pink-500 text-white`}
             >
                 {isOpen ? <X size={28} /> : <MessageSquare size={28} fill="currentColor" />}
 
