@@ -17,7 +17,8 @@ const loadRazorpayScript = () => {
 
 const Subscription = () => {
     const { user, updateUser, setUser } = useAuthStore();
-    const { isDarkMode } = useThemeStore();
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
@@ -118,11 +119,11 @@ const Subscription = () => {
         }
     };
 
-    const bgClass = isDarkMode ? 'bg-[#121212] text-white' : 'bg-gray-50 text-gray-900';
+    const bgClass = isDarkMode ? 'bg-[#121212] text-white' : 'bg-gray-200 text-gray-900';
     const cardBg = isDarkMode ? 'bg-[#1a1a1a] border-gray-700' : 'bg-white border-gray-200';
 
     return (
-        <div className={`min-h-screen py-20 px-4 ${bgClass}`}>
+        <div className={`font-dancing min-h-screen py-20 px-4 ${bgClass} rounded-4xl`}>
             <div className="max-w-4xl mx-auto text-center mb-10">
                 <h1 className="text-4xl font-bold mb-4">
                     Upgrade to <span className="text-yellow-500">Premium</span>
