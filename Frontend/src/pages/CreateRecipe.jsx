@@ -1,39 +1,32 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Upload, Plus, X, Video, Trash2, Image as ImageIcon, Leaf, Drumstick } from 'lucide-react';
-import { recipeApi } from '../api/recipes';
-import Input from '../components/Input';
-import useThemeStore from '../store/useThemeStore';
-import RichTextEditor from '../components/RichTextEditor'; // ✅ Import Rich Text Editor
 
-const CUISINES = [
-    'Italian',
-    'Indian',
-    'Mexican',
-    'Chinese',
-    'American',
-    'Thai',
-    'Japanese',
-    'French',
-    'Greek',
-    'Spanish',
-    'Lebanese',
-    'Korean',
-    'Vietnamese',
-    'Turkish',
-    'Caribbean',
-    'Mediterranean',
-    'German',
-    'Brazilian',
-    'Moroccan',
-    'Ethiopian',
-    'Other',
-];
+// recipe api to create call
+import { recipeApi } from '../api/recipes';
+
+// theme store
+import useThemeStore from '../store/useThemeStore';
+
+// usable components
+import RichTextEditor from '../components/RichTextEditor';  // for high user end test editor
+import { FilterDropdown } from '../components/FilterDropdown'; // ui interactive dropdown
+import Input from '../components/Input'; // input component
+
+// icons & toast
+import { toast, ToastContainer } from 'react-toastify';
+import { Loader2, Upload, Plus, X, Video, Trash2, Image as ImageIcon, Leaf, Drumstick, BarChart, Utensils } from 'lucide-react';
+
+
+// options
+const CUISINES = ['Italian','Indian','Mexican','Chinese','American','Thai','Japanese','French','Greek','Spanish','Lebanese','Korean','Vietnamese','Turkish','Caribbean','Mediterranean','German','Brazilian','Moroccan','Ethiopian','Other',];
+const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
 
 const CreateRecipe = () => {
     const navigate = useNavigate();
-    const { isDarkMode } = useThemeStore();
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
+
     const [isLoading, setIsLoading] = useState(false);
 
     // Arrays state
@@ -45,19 +38,24 @@ const CreateRecipe = () => {
     // Video state
     const [video, setVideo] = useState(null);
     const [videoPreview, setVideoPreview] = useState(null);
-    const [videoThumbnail, setVideoThumbnail] = useState(null); // ✅ Thumbnail State
+    const [videoThumbnail, setVideoThumbnail] = useState(null); 
     const [thumbnailPreview, setThumbnailPreview] = useState(null);
 
-    // We use setValue to manually update the 'instructions' field from the RichEditor
     const {
         register,
         handleSubmit,
         watch,
         setValue,
         formState: { errors },
-    } = useForm();
+    } = useForm(
+        {defaultValues: {
+            cuisine: 'Italian',
+            difficulty: 'Easy'
+        }}
+    );
 
     const selectedCuisine = watch('cuisine');
+    const selectedDifficulty = watch('difficulty');
 
     // --- Ingredient Handlers ---
     const handleAddIngredient = () => setIngredients([...ingredients, '']);
@@ -71,7 +69,7 @@ const CreateRecipe = () => {
     // --- Image Handlers ---
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
-        if (files.length + images.length > 10) return alert('Max 10 images allowed');
+        if (files.length + images.length > 10) return toast.info('Max 10 images allowed');
         setImages((prev) => [...prev, ...files]);
         setPreviewUrls((prev) => [...prev, ...files.map((f) => URL.createObjectURL(f))]);
     };
@@ -107,14 +105,12 @@ const CreateRecipe = () => {
         try {
             const formData = new FormData();
 
-            // Basic Fields
+            
             formData.append('title', data.title);
             formData.append('description', data.description);
 
-            // ✅ Instructions from RichTextEditor
-            // If user hasn't typed anything, data.instructions might be undefined, handle that
-            formData.append('instructions', data.instructions || '');
-
+            // Instructions from RichTextEditor
+            formData.append('instructions', data.instructions || '')
             formData.append('difficulty', data.difficulty);
             formData.append('mainIngredient', data.mainIngredient);
             formData.append('cookingTime', data.cookingTime);
@@ -126,7 +122,7 @@ const CreateRecipe = () => {
             let finalCuisine = data.cuisine;
             if (finalCuisine === 'Other') {
                 if (!data.customCuisine || data.customCuisine.trim() === '') {
-                    alert('Please type the name of the cuisine.');
+                    toast.arguments('Please type the name of the cuisine.');
                     setIsLoading(false);
                     return;
                 }
@@ -147,8 +143,7 @@ const CreateRecipe = () => {
             await recipeApi.create(formData);
             navigate('/');
         } catch (error) {
-            console.error(error);
-            alert('Failed to create recipe. Check console.');
+            toast.error('Failed to create recipe. Check console.');
         } finally {
             setIsLoading(false);
         }
@@ -161,7 +156,8 @@ const CreateRecipe = () => {
     const inputBg = isDarkMode ? 'bg-[#1e1e1e] border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900';
 
     return (
-        <div className="max-w-3xl mx-auto mb-10">
+        <div className="max-w-3xl mx-auto mb-10 font-dancing">
+            <ToastContainer />
             <div className="mb-8">
                 <h1 className={`text-3xl font-bold ${textColor}`}>Create New Recipe</h1>
             </div>
@@ -181,7 +177,7 @@ const CreateRecipe = () => {
                             onClick={() => setIsVegetarian(true)}
                             className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border transition-all ${
                                 isVegetarian ? 'border-green-500 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : `${inputBg}`
-                            }`}
+                            } `}
                         >
                             <Leaf size={18} /> Veg
                         </button>
@@ -200,26 +196,33 @@ const CreateRecipe = () => {
 
                 {/* Meta Data */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Replaced native Cuisine Select with FilterDropdown */}
                     <div className="flex flex-col gap-1">
                         <label className={`text-sm font-medium ${labelColor}`}>Cuisine</label>
-                        <select {...register('cuisine')} className={`w-full px-4 py-2 rounded-lg border ${inputBg}`}>
-                            {CUISINES.map((c) => (
-                                <option key={c} value={c}>
-                                    {c}
-                                </option>
-                            ))}
-                        </select>
+                        <FilterDropdown
+                            label="Select"
+                            icon={Utensils}
+                            value={selectedCuisine}
+                            options={CUISINES}
+                            isDarkMode={isDarkMode}
+                            onChange={(val) => setValue('cuisine', val, { shouldValidate: true })}
+                        />
                     </div>
+
+                    {/* Replaced native Difficulty Select with FilterDropdown */}
                     <div className="flex flex-col gap-1">
                         <label className={`text-sm font-medium ${labelColor}`}>Difficulty</label>
-                        <select {...register('difficulty')} className={`w-full px-4 py-2 rounded-lg border ${inputBg}`}>
-                            <option value="Easy">Easy</option>
-                            <option value="Medium">Medium</option>
-                            <option value="Hard">Hard</option>
-                        </select>
+                        <FilterDropdown
+                            label="Select"
+                            icon={BarChart}
+                            value={selectedDifficulty}
+                            options={DIFFICULTIES}
+                            isDarkMode={isDarkMode}
+                            onChange={(val) => setValue('difficulty', val, { shouldValidate: true })}
+                        />
                     </div>
                     <Input label="Time (mins)" type="number" {...register('cookingTime')} />
-                    {/* ✅ CALORIES INPUT */}
+                    {/* CALORIES INPUT */}
                     <Input label="Calories (kcal)" type="number" placeholder="450" {...register('calories')} />
                 </div>
 
@@ -248,13 +251,13 @@ const CreateRecipe = () => {
                                 </button>
                             </div>
                         ))}
-                        <button type="button" onClick={handleAddIngredient} className="text-sm text-primary flex items-center gap-1 mt-2">
+                        <button type="button" onClick={handleAddIngredient} className="text-sm text-[#f97316] flex items-center gap-1 mt-2">
                             <Plus size={16} /> Add
                         </button>
                     </div>
                 </div>
 
-                {/* ✅ INSTRUCTIONS (RICH TEXT EDITOR) */}
+                {/* INSTRUCTIONS (RICH TEXT EDITOR) */}
                 <div>
                     <label className={`text-sm font-medium mb-2 block ${labelColor}`}>Instructions</label>
                     {/* Use Controller logic via manual onChange to hook into react-hook-form */}
@@ -266,7 +269,7 @@ const CreateRecipe = () => {
                     <label className={`text-sm font-medium mb-2 block ${labelColor}`}>Images</label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {previewUrls.map((url, i) => (
-                            <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border dark:border-gray-700">
+                            <div key={i} className={`relative group aspect-square rounded-lg overflow-hidden border ${isDarkMode ? '' : 'border-gray-700'}`}>
                                 <img src={url} className="w-full h-full object-cover" alt="preview" />
                                 <button
                                     type="button"
@@ -278,7 +281,7 @@ const CreateRecipe = () => {
                             </div>
                         ))}
                         <label
-                            className={`aspect-square flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors ${
+                            className={`aspect-square flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:border-[#f97316] hover:bg-[#f97316]/5 transition-colors ${
                                 isDarkMode ? 'border-gray-600' : 'border-gray-300'
                             }`}
                         >
@@ -309,7 +312,7 @@ const CreateRecipe = () => {
                                     </button>
                                 </div>
                             ) : (
-                                <label className="cursor-pointer block py-8 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors rounded-lg">
+                                <label className={`cursor-pointer block py-8 transition-colors rounded-lg ${isDarkMode ? 'hover:bg-gray-800/50' : 'hover:bg-gray-50'}`}>
                                     <Video className="mx-auto text-gray-400 mb-2" size={32} />
                                     <span className={`text-sm ${labelColor}`}>Click to upload video</span>
                                     <input type="file" accept="video/*" className="hidden" onChange={handleVideoChange} />
@@ -318,7 +321,7 @@ const CreateRecipe = () => {
                         </div>
                     </div>
 
-                    {/* ✅ Video Thumbnail Upload (Only if video exists) */}
+                    {/* Video Thumbnail Upload (Only if video exists) */}
                     {video && (
                         <div className="animate-in fade-in">
                             <label className={`text-sm font-medium mb-2 block ${labelColor}`}>Video Thumbnail (Optional)</label>
@@ -338,7 +341,7 @@ const CreateRecipe = () => {
                                         </button>
                                     </div>
                                 ) : (
-                                    <label className="cursor-pointer block py-8 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors rounded-lg">
+                                    <label className={`cursor-pointer block py-8 transition-colors rounded-lg ${isDarkMode ? 'hover:bg-gray-800/50 ' : 'hover:bg-gray-50'}`}>
                                         <ImageIcon className="mx-auto text-gray-400 mb-2" size={32} />
                                         <span className={`text-sm ${labelColor}`}>Upload Cover Image</span>
                                         <input type="file" accept="image/*" className="hidden" onChange={handleThumbnailChange} />
@@ -349,12 +352,12 @@ const CreateRecipe = () => {
                     )}
                 </div>
 
-                <div className="flex items-center gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                    <input type="checkbox" {...register('isPremium')} className="w-5 h-5 text-primary rounded" />
-                    <label className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Mark as Premium</label>
+                <div className={`flex items-center gap-3 p-4 rounded-lg ${isDarkMode ? 'bg-yellow-900/20' : 'bg-yellow-50'}`}>
+                    <input type="checkbox" {...register('isPremium')} className="w-5 h-5 text-[#f97316] rounded" />
+                    <label className={`text-sm font-medium ${isDarkMode ? 'text-yellow-200' : 'text-yellow-800'}`}>Mark as Premium</label>
                 </div>
 
-                <button type="submit" disabled={isLoading} className="w-full py-3 bg-primary text-white font-bold rounded-lg flex items-center justify-center gap-2">
+                <button type="submit" disabled={isLoading} className="w-full py-3 bg-[#f97316] text-white font-bold rounded-lg flex items-center justify-center gap-2">
                     {isLoading ? <Loader2 className="animate-spin" /> : 'Publish Recipe'}
                 </button>
             </form>
