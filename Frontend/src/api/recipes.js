@@ -60,4 +60,12 @@ export const recipeApi = {
             return handleErrorResponse(error);
         }
     },
+    getRecipeOfTheDay: async () => {
+        try {
+            const response = await api.get('/recipes/daily');
+            return response.data.data; 
+        } catch (error) {
+            return handleErrorResponse(error);
+        }
+    },
 };
