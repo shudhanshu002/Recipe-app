@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { blogApi } from '../api/blogs';
 import useThemeStore from '../store/useThemeStore';
+import RichTextEditor from '../components/RichTextEditor'; 
 import { Loader2 } from 'lucide-react';
-import RichTextEditor from '../components/RichTextEditor'; // ✅ Import
+import { toast, ToastContainer } from 'react-toastify';
 
 const CreateBlog = () => {
     const navigate = useNavigate();
-    const { isDarkMode } = useThemeStore();
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
     // Initial content can be empty string
     const [formData, setFormData] = useState({ title: '', content: '', topic: '', topicColor: '#ff642f' });
     const [cover, setCover] = useState(null);
@@ -15,9 +17,8 @@ const CreateBlog = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // Validation for Rich Text (HTML might contain empty tags)
         if (formData.content === '<p></p>' || !formData.content.trim()) {
-            return alert('Please write some content!');
+            return toast.info('Please write some content!');
         }
 
         setLoading(true);
@@ -29,21 +30,21 @@ const CreateBlog = () => {
             await blogApi.create(fd);
             navigate('/blogs');
         } catch (error) {
-            console.error(error);
-            alert('Failed to publish');
+            toast.error('Failed to publish');
         } finally {
             setLoading(false);
         }
     };
 
-    const inputStyle = `w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+    const inputStyle = `w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-[#f97316]/50 ${
         isDarkMode ? 'bg-[#2d2d2d] border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'
     }`;
     const textColor = isDarkMode ? 'text-white' : 'text-gray-900';
 
     return (
-        <div className="max-w-3xl mx-auto mb-20">
-            <h1 className={`text-3xl font-bold mb-6 ${textColor}`}>Write a Blog</h1>
+        <div className="max-w-3xl mx-auto mb-20 font-dancing">
+            <ToastContainer/>
+            <h1 className={`text-3xl font-bold mb-6 ${textColor}`}>Write a Blog...</h1>
             <form onSubmit={handleSubmit} className={`p-8 rounded-xl border space-y-6 ${isDarkMode ? 'bg-[#1e1e1e] border-gray-700' : 'bg-white border-gray-200'}`}>
                 <div>
                     <label className="text-sm font-bold mb-1 block text-gray-500">Title</label>
@@ -66,7 +67,6 @@ const CreateBlog = () => {
                     </div>
                 </div>
 
-
                 <div>
                     <label className="text-sm font-bold mb-1 block text-gray-500">Content</label>
                     <RichTextEditor content={formData.content} onChange={(html) => setFormData({ ...formData, content: html })} />
@@ -77,11 +77,11 @@ const CreateBlog = () => {
                     <input
                         type="file"
                         onChange={(e) => setCover(e.target.files[0])}
-                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#f97316]/10 file:text-[#f97316] hover:file:bg-[#f97316]/20"
                     />
                 </div>
 
-                <button disabled={loading} className="w-full py-3 bg-primary text-white font-bold rounded-lg hover:bg-orange-600 disabled:opacity-50 flex justify-center">
+                <button disabled={loading} className="w-full py-3 bg-[#f97316] text-white font-bold rounded-lg hover:bg-orange-600 disabled:opacity-50 flex justify-center">
                     {loading ? <Loader2 className="animate-spin" /> : 'Publish Post'}
                 </button>
             </form>
