@@ -1,24 +1,36 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, LogIn, Facebook } from 'lucide-react';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '../lib/validation';
+
+// api
 import { authApi } from '../api/auth';
+
+// store
 import useAuthStore from '../store/useAuthStore';
-import Input from '../components/Input';
 import useThemeStore from '../store/useThemeStore';
-import logo from '../assets/circular_logo_dark.png'
+
+//components
+import Input from '../components/Input';
+import logo from '../assets/wrriten_dark_logo2.png';
+import { Loader2, LogIn, Facebook, EyeOff, Eye } from 'lucide-react';
+import Login3DBackground from '../components/Login3DBackground';
 
 const Login = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [serverError, setServerError] = useState('');
     const navigate = useNavigate();
     const { login } = useAuthStore();
-    const { isDarkMode } = useThemeStore();
-    console.log("Theme: ", isDarkMode)
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
+    const [showPassword, setShowPassword] = useState(false);
 
-    const { register, handleSubmit, formState: { errors },} = useForm({
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm({
         resolver: zodResolver(loginSchema),
     });
 
@@ -36,7 +48,6 @@ const Login = () => {
         }
     };
 
-    // Social Login Handlers
     const handleGoogleLogin = () => {
         window.location.href = 'http://localhost:5000/api/v1/users/google';
     };
@@ -45,18 +56,21 @@ const Login = () => {
         window.location.href = 'http://localhost:5000/api/v1/users/facebook';
     };
 
-    // Styles
-    const containerBg = isDarkMode ? 'bg-[#121212]' : 'bg-secondary';
-    const cardBg = isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white';
+    const containerBg = isDarkMode ? 'bg-[#121212]' : 'bg-gray-50';
+    const cardBg = isDarkMode ? 'bg-[#1e1e1e]/90 backdrop-blur-md' : 'bg-white/90 backdrop-blur-md';
     const textColor = isDarkMode ? 'text-white' : 'text-gray-900';
     const subText = isDarkMode ? 'text-gray-400' : 'text-gray-500';
 
     return (
-        <div className={`flex items-center justify-center min-h-screen p-4 ${containerBg}`}>
-            <div className={`w-full max-w-md rounded-2xl shadow-xl p-8 space-y-6 ${cardBg}`}>
+        <div className={`font-dancing relative flex items-center justify-center min-h-screen p-4 overflow-hidden ${containerBg}`}>
+            {/* 3D Background Layer */}
+            <Login3DBackground isDarkMode={isDarkMode} />
+
+            {/* Main Login Card (Z-Index increased to sit on top) */}
+            <div className={`relative z-10 w-full max-w-md rounded-2xl shadow-2xl p-8 space-y-6 border border-white/10 ${cardBg}`}>
                 <div className="text-center space-y-2">
-                    <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mx-auto text-white shadow-lg shadow-orange-500/20">
-                        <LogIn size={24} />
+                    <div className="w-36 h-12 bg-#f97316 rounded-xl flex items-center justify-center mx-auto text-white shadow-lg shadow-orange-500/20">
+                        <img src={`${logo}`} size={400} />
                     </div>
                     <h1 className={`text-2xl font-bold ${textColor}`}>Welcome Back</h1>
                     <p className={subText}>Sign in to continue your culinary journey</p>
@@ -66,12 +80,23 @@ const Login = () => {
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <Input label="Email" placeholder="chef@example.com" error={errors.email} {...register('email')} />
-                    <Input label="Password" type="password" placeholder="••••••••" error={errors.password} {...register('password')} />
+                    <div className="relative">
+                        <Input label="Password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" error={errors.password} {...register('password')} />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            // Adjust 'top' if the icon isn't aligned with your input field perfectly
+                            className="absolute right-3 top-[38px] text-gray-400 hover:text-[#f97316] transition-colors focus:outline-none"
+                            tabIndex={-1}
+                        >
+                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                        </button>
+                    </div>
 
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-3 bg-primary text-white rounded-lg flex justify-center font-bold hover:bg-orange-600 transition shadow-md disabled:opacity-70"
+                        className="w-full py-3 bg-#f97316 text-white rounded-lg flex justify-center bg-orange-600 font-bold hover:bg-orange-800 transition shadow-md disabled:opacity-70"
                     >
                         {isLoading ? <Loader2 className="animate-spin" /> : 'Sign In'}
                     </button>
@@ -79,18 +104,19 @@ const Login = () => {
 
                 <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                        <span className={`w-full border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}></span>
+                        <span className={`w-full border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-300'}`}></span>
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                        <span className={`px-2 ${cardBg} ${subText}`}>Or continue with</span>
+                        {/* Transparent bg for "Or continue with" to blend with glass card */}
+                        <span className={`px-2 ${isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white'} ${subText} rounded`}>Or continue with</span>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                     <button
                         onClick={handleGoogleLogin}
-                        className={`flex items-center justify-center gap-2 py-2.5 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition ${
-                            isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-700'
+                        className={`flex items-center justify-center gap-2 py-2.5 border rounded-lg hover:bg-gray-50  transition ${
+                            isDarkMode ? 'border-gray-700 text-white hover:bg-gray-800' : 'border-gray-200 text-gray-700'
                         }`}
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -103,8 +129,8 @@ const Login = () => {
                     </button>
                     <button
                         onClick={handleFacebookLogin}
-                        className={`flex items-center justify-center gap-2 py-2.5 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition ${
-                            isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-700'
+                        className={`flex items-center justify-center gap-2 py-2.5 border rounded-lg hover:bg-gray-50  transition ${
+                            isDarkMode ? 'border-gray-700 text-white hover:bg-gray-800' : 'border-gray-200 text-gray-700'
                         }`}
                     >
                         <Facebook className="w-5 h-5 text-[#1877F2]" fill="currentColor" />
@@ -114,7 +140,7 @@ const Login = () => {
 
                 <p className={`text-center text-sm ${subText}`}>
                     Don't have an account?{' '}
-                    <Link to="/register" className="text-primary hover:underline font-medium">
+                    <Link to="/register" className="text-#f97316 hover:underline font-medium">
                         Sign up
                     </Link>
                 </p>

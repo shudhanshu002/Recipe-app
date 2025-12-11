@@ -1,21 +1,40 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, UserPlus, CheckCircle, Facebook } from 'lucide-react';
+
+// zod validation
+import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, otpSchema } from '../lib/validation';
+
+// api
 import { authApi } from '../api/auth';
-import Input from '../components/Input';
+
+// store
 import useThemeStore from '../store/useThemeStore';
+
+// component
+import Input from '../components/Input';
+import Login3DBackground from '../components/Login3DBackground';
+
+// animation and icons
 import { motion } from 'framer-motion';
+import { Loader2, UserPlus, CheckCircle, Facebook, EyeOff, Eye } from 'lucide-react';
 
 const Register = () => {
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [serverError, setServerError] = useState('');
+
+    // OTP State: Array of 6 strings
+    const [otp, setOtp] = useState(new Array(6).fill(''));
+    const inputRefs = useRef([]); // To hold refs for the 6 inputs
+
     const navigate = useNavigate();
-    const { isDarkMode } = useThemeStore();
+    const { theme } = useThemeStore();
+    const isDarkMode = theme === 'dark';
+
+    const [showPassword, setShowPassword] = useState(false);
 
     const {
         register,
@@ -24,10 +43,15 @@ const Register = () => {
     } = useForm({ resolver: zodResolver(registerSchema) });
 
     const {
-        register: registerOtp,
         handleSubmit: handleSubmitOtp,
+        setValue, // We need this to manually set the OTP value for Zod
         formState: { errors: errorsOtp },
     } = useForm({ resolver: zodResolver(otpSchema) });
+
+    // Sync local OTP state with React Hook Form
+    useEffect(() => {
+        setValue('otp', otp.join(''));
+    }, [otp, setValue]);
 
     const onRegister = async (data) => {
         setIsLoading(true);
@@ -60,6 +84,52 @@ const Register = () => {
         }
     };
 
+    
+
+    // 1. Handle Typing
+    const handleOtpChange = (element, index) => {
+        if (isNaN(element.value)) return;
+
+        const newOtp = [...otp];
+        newOtp[index] = element.value;
+        setOtp(newOtp);
+
+        // Move to next input if value is entered
+        if (element.value && index < 5) {
+            inputRefs.current[index + 1].focus();
+        }
+    };
+
+    // 2. Handle Backspace
+    const handleKeyDown = (e, index) => {
+        if (e.key === 'Backspace') {
+            if (!otp[index] && index > 0) {
+                // If current box is empty, focus previous and clear it
+                const newOtp = [...otp];
+                newOtp[index - 1] = '';
+                setOtp(newOtp);
+                inputRefs.current[index - 1].focus();
+            }
+        }
+    };
+
+    // 3. Handle Paste
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const pastedData = e.clipboardData.getData('text').slice(0, 6); // Get first 6 chars
+        if (!/^\d+$/.test(pastedData)) return; // Only allow numbers
+
+        const newOtp = [...otp];
+        pastedData.split('').forEach((char, i) => {
+            if (i < 6) newOtp[i] = char;
+        });
+        setOtp(newOtp);
+
+        // Focus the box after the pasted content
+        const nextIndex = Math.min(pastedData.length, 5);
+        inputRefs.current[nextIndex].focus();
+    };
+
     // Social Handlers
     const handleGoogleLogin = () => {
         window.location.href = 'http://localhost:5000/api/v1/users/google';
@@ -69,26 +139,28 @@ const Register = () => {
     };
 
     // Theme Styles
-    const containerBg = isDarkMode ? 'bg-[#121212]' : 'bg-secondary';
+    const containerBg = isDarkMode ? 'bg-[#121212]' : 'bg-[#3b82f6]';
     const cardBg = isDarkMode ? 'bg-[#1e1e1e]' : 'bg-white';
     const textColor = isDarkMode ? 'text-white' : 'text-gray-900';
     const subText = isDarkMode ? 'text-gray-400' : 'text-gray-500';
+    const inputBg = isDarkMode ? 'bg-[#2d2d2d] border-gray-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-900';
 
     return (
-        <div className={`flex items-center justify-center min-h-screen p-4 ${containerBg}`}>
-            <div className={`w-full max-w-md rounded-2xl shadow-xl p-8 space-y-6 ${cardBg}`}>
+        <div className={`font-dancing relative flex items-center justify-center min-h-screen p-4 ${containerBg}`}>
+            <Login3DBackground isDarkMode={isDarkMode} />
+            <div className={`relative z-10 w-full max-w-md rounded-2xl shadow-xl p-8 space-y-6 ${cardBg}`}>
                 {/* ⭐ TOP PROGRESS BAR ⭐ */}
-                <div className="w-full h-1 bg-gray-300 dark:bg-gray-700 rounded overflow-hidden mb-4">
+                <div className={`w-full h-1 rounded overflow-hidden mb-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-300'}`}>
                     <motion.div
                         initial={{ width: step === 1 ? '50%' : '100%' }}
                         animate={{ width: step === 1 ? '50%' : '100%' }}
                         transition={{ duration: 0.6, ease: 'easeInOut' }}
-                        className="h-full bg-primary"
+                        className="h-full bg-[#f97316]"
                     />
                 </div>
 
                 <div className="text-center space-y-2">
-                    <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mx-auto text-white shadow-lg shadow-orange-500/20">
+                    <div className="w-12 h-12 bg-[#f97316] rounded-xl flex items-center justify-center mx-auto text-white shadow-lg shadow-orange-500/20">
                         {step === 1 ? <UserPlus size={24} /> : <CheckCircle size={24} />}
                     </div>
                     <h1 className={`text-2xl font-bold ${textColor}`}>{step === 1 ? 'Create Account' : 'Verify Email'}</h1>
@@ -102,11 +174,24 @@ const Register = () => {
                         <form onSubmit={handleSubmit(onRegister)} className="space-y-4">
                             <Input label="Username" placeholder="ChefName" error={errors.username} {...register('username')} />
                             <Input label="Email" placeholder="email@example.com" error={errors.email} {...register('email')} />
-                            <Input label="Password" type="password" placeholder="••••••••" error={errors.password} {...register('password')} />
+
+                            <div className="relative">
+                                <Input label="Password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" error={errors.password} {...register('password')} />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    // Adjust 'top' if the icon isn't aligned with your input field perfectly
+                                    className="absolute right-3 top-[38px] text-gray-400 hover:text-[#f97316] transition-colors focus:outline-none"
+                                    tabIndex={-1}
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
+
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full py-3 bg-primary text-white rounded-lg flex justify-center hover:bg-orange-600 transition shadow-md font-bold disabled:opacity-70"
+                                className="w-full py-3 bg-[#f97316] text-white rounded-lg flex justify-center hover:bg-orange-600 transition shadow-md font-bold disabled:opacity-70"
                             >
                                 {isLoading ? <Loader2 className="animate-spin" /> : 'Send OTP'}
                             </button>
@@ -124,8 +209,8 @@ const Register = () => {
                         <div className="grid grid-cols-2 gap-3">
                             <button
                                 onClick={handleGoogleLogin}
-                                className={`flex items-center justify-center gap-2 py-2.5 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition ${
-                                    isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-700'
+                                className={`flex items-center justify-center gap-2 py-2.5 border rounded-lg transition ${
+                                    isDarkMode ? 'border-gray-700 text-white hover:bg-gray-800' : 'border-gray-200 text-gray-700 hover:bg-gray-50'
                                 }`}
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -139,8 +224,8 @@ const Register = () => {
 
                             <button
                                 onClick={handleFacebookLogin}
-                                className={`flex items-center justify-center gap-2 py-2.5 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition ${
-                                    isDarkMode ? 'border-gray-700 text-white' : 'border-gray-200 text-gray-700'
+                                className={`flex items-center justify-center gap-2 py-2.5 border rounded-lg transition ${
+                                    isDarkMode ? 'border-gray-700 text-white hover:bg-gray-800' : 'border-gray-200 text-gray-700 hover:bg-gray-50'
                                 }`}
                             >
                                 <Facebook className="w-5 h-5 text-[#1877F2]" fill="currentColor" /> Facebook
@@ -148,12 +233,31 @@ const Register = () => {
                         </div>
                     </>
                 ) : (
-                    <form onSubmit={handleSubmitOtp(onOtp)} className="space-y-4">
-                        <Input label="OTP" placeholder="123456" error={errorsOtp.otp} {...registerOtp('otp')} className="text-center text-xl tracking-widest" />
+                    <form onSubmit={handleSubmitOtp(onOtp)} className="space-y-6">
+                        {/* 6-Box OTP Input */}
+                        <div className="flex justify-between gap-2">
+                            {otp.map((data, index) => (
+                                <input
+                                    key={index}
+                                    type="text"
+                                    name="otp"
+                                    maxLength="1"
+                                    value={data}
+                                    ref={(el) => (inputRefs.current[index] = el)}
+                                    onChange={(e) => handleOtpChange(e.target, index)}
+                                    onKeyDown={(e) => handleKeyDown(e, index)}
+                                    onPaste={handlePaste}
+                                    className={`w-12 h-14 text-center text-xl font-bold rounded-xl border focus:border-[#f97316] focus:ring-2 focus:ring-[#f97316]/20 outline-none transition-all ${inputBg}`}
+                                />
+                            ))}
+                        </div>
+
+                        {errorsOtp.otp && <p className="text-red-500 text-sm text-center">{errorsOtp.otp.message}</p>}
+
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full py-3 bg-accent text-white rounded-lg flex justify-center hover:bg-green-600 transition font-bold disabled:opacity-70"
+                            className="w-full py-3 bg-[#f97316] text-white rounded-lg flex justify-center hover:bg-orange-600 transition font-bold disabled:opacity-70"
                         >
                             {isLoading ? <Loader2 className="animate-spin" /> : 'Verify & Create'}
                         </button>
@@ -163,7 +267,7 @@ const Register = () => {
                 {step === 1 && (
                     <p className={`text-center text-sm ${subText}`}>
                         Already have an account?{' '}
-                        <Link to="/login" className="text-primary hover:underline font-medium">
+                        <Link to="/login" className="text-[#f97316] hover:underline font-medium">
                             Login
                         </Link>
                     </p>
