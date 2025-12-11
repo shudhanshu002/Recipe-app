@@ -46,7 +46,9 @@ const handleSocialLogin = asyncHandler(async (req, res) => {
         sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     };
 
-    return res.status(200).cookie('accessToken', accessToken, options).cookie('refreshToken', refreshToken, options).redirect('http://localhost:5173');
+    const clientURL = process.env.CLIENT_URL;
+
+    return res.status(200).cookie('accessToken', accessToken, options).cookie('refreshToken', refreshToken, options).redirect(clientURL);
 });
 
 // 3. normal register

@@ -5,6 +5,7 @@ import { optionalAuth, verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
+const clientURL = process.env.CLIENT_URL;
 
 const checkStrategy = (strategyName) => (req, res, next) => {
     // Check if passport has this strategy registered
@@ -34,10 +35,7 @@ router.route("/google").get(
     passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-router.route("/google/callback").get(
-    passport.authenticate("google", { session: false, failureRedirect: "http://localhost:5173/login" }),
-    handleSocialLogin
-);
+router.route('/google/callback').get(passport.authenticate('google', { session: false, failureRedirect: `${clientURL}/login` }), handleSocialLogin);
 
 // Facebook
 router.route("/facebook").get(
@@ -45,10 +43,7 @@ router.route("/facebook").get(
     passport.authenticate("facebook", { scope: ["email"] })
 );
 
-router.route("/facebook/callback").get(
-    passport.authenticate("facebook", { session: false, failureRedirect: "http://localhost:5173/login" }),
-    handleSocialLogin
-);
+router.route('/facebook/callback').get(passport.authenticate('facebook', { session: false, failureRedirect: `${clientURL}/login` }), handleSocialLogin);
 
 router.route('/avatar').patch(verifyJWT, upload.single('avatar'), updateUserAvatar);
 router.route('/update-account').patch(verifyJWT, updateAccountDetails);
