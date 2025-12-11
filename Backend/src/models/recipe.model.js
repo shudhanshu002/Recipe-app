@@ -24,17 +24,12 @@ const recipeSchema = new mongoose.Schema(
         calories: { type: Number },
         isVegetarian: { type: Boolean, default: true, required: true },
 
-        // ✅ TRACKING
-        // 'viewedBy' tracks logged-in users to prevent duplicate counts
         viewedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 
-        // 'views' is the total count (including guests)
-        // We removed the virtual field that conflicted with this
         views: { type: Number, default: 0 },
     },
     {
         timestamps: true,
-        // Removed toJSON virtuals to prevent accidental conflict if any remain
     },
 );
 

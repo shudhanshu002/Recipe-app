@@ -8,24 +8,23 @@ const reactionSchema = new mongoose.Schema(
     { _id: false },
 );
 
-// Define Reply Schema separately
 const replySchema = new mongoose.Schema({
     content: {
         type: String,
         required: true,
     },
     media: {
-        type: String, // Optional URL
+        type: String, 
     },
     author: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // Explicit string
+        ref: 'User',
         required: true,
     },
     likes: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User', // Explicit string
+            ref: 'User',
         },
     ],
     parentId: {
@@ -41,7 +40,6 @@ const replySchema = new mongoose.Schema({
     },
 });
 
-// Define Review Schema
 const reviewSchema = new mongoose.Schema(
     {
         content: {
@@ -59,22 +57,22 @@ const reviewSchema = new mongoose.Schema(
         },
         author: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User', // Explicit string
+            ref: 'User', 
             required: true,
         },
         recipe: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Recipe', // Explicit string
+            ref: 'Recipe', 
             required: true,
         },
         likes: [
             {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: 'User', // Explicit string
+                ref: 'User', 
             },
         ],
         reactions: [reactionSchema],
-        replies: [replySchema], // Embed the reply schema
+        replies: [replySchema], 
     },
     { timestamps: true },
 );

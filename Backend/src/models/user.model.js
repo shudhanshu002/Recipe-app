@@ -93,6 +93,10 @@ const userSchema = new mongoose.Schema(
         subscriptionExpiry: { type: Date },
         razorpayOrderId: { type: String },
         isFollowingPublic: { type: Boolean, default: true },
+        isNewsletterSubscribed: {
+            type: Boolean,
+            default: false,
+        },
     },
     { timestamps: true },
 );
