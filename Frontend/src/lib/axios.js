@@ -8,6 +8,8 @@ const api = axios.create({
     },
 });
 
+
+// base call to be used in api;
 api.interceptors.response.use(
     (response) => response, // success fn
     async (error) => {  // error fn
