@@ -44,15 +44,8 @@ const socialLoginCallback = async (accessToken, refreshToken, profile, done) => 
     }
 };
 
-// --- DEBUGGING: Verify the exact URL being used ---
-// If .env is missing, it defaults to the string below.
-const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/api/v1/users/google/callback';
+const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL;
 
-console.log('---------------------------------------------------');
-console.log('🔵 GOOGLE STRATEGY CONFIG');
-console.log('🔵 Client ID:', process.env.GOOGLE_CLIENT_ID ? 'Loaded' : 'MISSING');
-console.log('🔵 Callback URL:', GOOGLE_CALLBACK_URL);
-console.log('---------------------------------------------------');
 
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     passport.use(
@@ -73,7 +66,7 @@ if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
             {
                 clientID: process.env.FACEBOOK_APP_ID,
                 clientSecret: process.env.FACEBOOK_APP_SECRET,
-                callbackURL: '/api/v1/users/facebook/callback',
+                callbackURL: process.env.FACEBOOK_CALLBACK_URL,
                 profileFields: ['id', 'displayName', 'photos', 'email'],
             },
             socialLoginCallback,
