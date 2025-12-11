@@ -1,6 +1,5 @@
 import { Router } from "express";
 
-
 import userRouter from "./user.routes.js";
 import recipeRouter from "./recipe.routes.js";
 import reviewRouter from "./review.routes.js";
@@ -14,8 +13,7 @@ import shoppingListRouter from "./shoppinglist.routes.js"
 import shortRouter from './short.routes.js';
 import blogRouter from './blog.routes.js';
 import aiRouter from './ai.routes.js';
-
-
+import newsletterRouter from './newsletter.routes.js';
 import paymentRouter from './payment.routes.js';
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -35,6 +33,7 @@ router.use("/shoppinglist", shoppingListRouter);
 router.use("/shorts", shortRouter);
 router.use('/blogs', blogRouter);
 router.use('/ai', aiRouter);
+router.use('/newsletter', newsletterRouter);
 // Payment
 router.use('/payment', paymentRouter);
 
