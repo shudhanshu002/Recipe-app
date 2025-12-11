@@ -21,13 +21,13 @@ export const formatRelativeDate = (dateString) => {
 
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return date.toLocaleDateString('en-US', { weekday: 'long' }); // e.g., "Monday"
+    if (diffDays < 7) return date.toLocaleDateString('en-US', { weekday: 'long' }); //  "Monday"
 
     if (date.getFullYear() === now.getFullYear()) {
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); // e.g., "Oct 25"
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); //  "Oct 25"
     }
 
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); // e.g., "Oct 25, 2023"
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); //  "Oct 25, 2023"
 };
 
 export const timeAgo = (dateString) => {
