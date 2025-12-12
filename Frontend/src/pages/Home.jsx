@@ -261,7 +261,6 @@ const Home = () => {
     return (
         <div className="min-h-screen pb-20 relative">
             <ToastContainer />
-            9608577648
             {/* HERO */}
             <div className="text-center py-16 px-4 space-y-6 relative overflow-hidden">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-linear-to-b from-[#f97316]/5 to-transparent -z-10 pointer-events-none" />
