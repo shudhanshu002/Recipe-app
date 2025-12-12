@@ -10,10 +10,35 @@ import { errorHandler } from './middlewares/error.middleware.js'
 
 const app = express();
 
+const allowedOrigins = [
+    'http://localhost:5173', // Local Development
+    process.env.CLIENT_URL, // Main Production URL (set in Render)
+];
+
 app.use(
     cors({
-        origin: [process.env.CLIENT_URL, 'http://localhost:5173'],
-        credentials: true,
+        origin: function (origin, callback) {
+            // Allow requests with no origin (like mobile apps or curl requests)
+            if (!origin) return callback(null, true);
+
+            // Check if origin is in our explicit allowed list
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+
+            // ✅ SPECIAL FIX: Allow ANY Vercel Preview Deployment
+            // This regex allows any URL ending in .vercel.app
+            if (origin.endsWith('.vercel.app')) {
+                return callback(null, true);
+            }
+
+            // Otherwise block
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        },
+        credentials: true, // Allow cookies to be sent
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        allowedHeaders: 'Content-Type,Authorization',
     }),
 );
 
