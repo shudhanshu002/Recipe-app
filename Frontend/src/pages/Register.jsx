@@ -210,6 +210,7 @@ const Register = () => {
 
                         <div className="grid grid-cols-2 gap-3">
                             <button
+                                type='button'
                                 onClick={handleGoogleLogin}
                                 className={`flex items-center justify-center gap-2 py-2.5 border rounded-lg transition ${
                                     isDarkMode ? 'border-gray-700 text-white hover:bg-gray-800' : 'border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -225,6 +226,7 @@ const Register = () => {
                             </button>
 
                             <button
+                                type='button'
                                 onClick={handleFacebookLogin}
                                 className={`flex items-center justify-center gap-2 py-2.5 border rounded-lg transition ${
                                     isDarkMode ? 'border-gray-700 text-white hover:bg-gray-800' : 'border-gray-200 text-gray-700 hover:bg-gray-50'
