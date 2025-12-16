@@ -601,7 +601,6 @@ const Home = () => {
                         linkedin: 'https://www.linkedin.com/in/shudhanshu-singh-766sn/',
                         twitter: 'https://twitter.com/sudhanshu',
                         instagram: 'https://instagram.com/sudhanshu',
-                        facebook: 'https://facebook.com/sudhanshu',
                     }}
                 />
             </div>
