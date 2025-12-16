@@ -105,29 +105,29 @@ function App() {
   };
 
   // 3. Render Splash Screen until Auth is ready AND Animation is done
-  if (showSplash) {
-    return (
-        <SplashScreen 
-            onFinish={() => {
-                if (authChecked) handleSplashFinish();
-                else {
-                    // If auth is slow, wait for it
-                    const checkInterval = setInterval(() => {
-                        if (authChecked) {
-                            clearInterval(checkInterval);
-                            handleSplashFinish();
-                        }
-                    }, 100);
-                }
-            }} 
-            readyToFinish = {authChecked}
-        />
-    );
-  }
+  // if (showSplash) {
+  //   return (
+  //       <SplashScreen 
+  //           onFinish={() => {
+  //               if (authChecked) handleSplashFinish();
+  //               else {
+  //                   // If auth is slow, wait for it
+  //                   const checkInterval = setInterval(() => {
+  //                       if (authChecked) {
+  //                           clearInterval(checkInterval);
+  //                           handleSplashFinish();
+  //                       }
+  //                   }, 100);
+  //               }
+  //           }} 
+  //           readyToFinish = {authChecked}
+  //       />
+  //   );
+  // }
 
-  if (!showSplash && !authChecked) {
-      return <div className="w-screen h-screen bg-black" />; 
-  }
+  // if (!showSplash && !authChecked) {
+  //     return <div className="w-screen h-screen bg-black" />; 
+  // }
 
   return (
     <>
