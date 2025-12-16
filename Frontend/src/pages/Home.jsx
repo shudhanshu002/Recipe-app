@@ -25,7 +25,7 @@ import Skeleton from '../components/ui/Skeleton';
 // icons and toast
 import 'react-toastify/dist/ReactToastify.css';
 import { Search, PlayCircle, Star, ChevronRight, X, Flame, Clock, ChefHat, Heart, Mail, ArrowRight, Zap } from 'lucide-react';
-
+import founderimg from '../assets/founder_new.png';
 
 
 
@@ -591,7 +591,19 @@ const Home = () => {
                 </section>
 
                 {/* founder section  */}
-                <FounderSection />
+                <FounderSection
+                    image={founderimg}
+                    name="Sudhanshu"
+                    role="Founder & Developer"
+                    quote="Building Zaika Vault to connect food lovers across the globe. I believe that good code is like a good recipe—it requires patience, passion, and the right ingredients."
+                    socialLinks={{
+                        github: 'https://github.com/shudhanshu002/Recipe-app',
+                        linkedin: 'https://www.linkedin.com/in/shudhanshu-singh-766sn/',
+                        twitter: 'https://twitter.com/sudhanshu',
+                        instagram: 'https://instagram.com/sudhanshu',
+                        facebook: 'https://facebook.com/sudhanshu',
+                    }}
+                />
             </div>
             {/* DETAIL PANEL & VIDEO PLAYER */}
             {selectedRecipeId && (

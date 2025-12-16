@@ -1,7 +1,21 @@
 import { Quote, Github, Twitter, Linkedin, Instagram } from 'lucide-react';
 import useThemeStore from '../store/useThemeStore';
 
-const FounderSection = () => {
+const SOCIAL_ICONS = {
+    github: Github,
+    linkedin: Linkedin,
+    twitter: Twitter,
+    instagram: Instagram,
+    facebook: Facebook,
+};
+
+const FounderSection = (
+    image,
+    name,
+    role,
+    quote,
+    socialLinks = {}
+) => {
     const { theme } = useThemeStore();
     const isDarkMode = theme === 'dark';
 
@@ -24,11 +38,7 @@ const FounderSection = () => {
                         rounded-full rounded-tr-none rotate-[-10deg] group-hover:rotate-0 transition-all duration-500 ease-out"
                     >
                         <div className="w-full h-full bg-white rounded-full rounded-tr-none overflow-hidden relative">
-                            <img
-                                src="https://avatars.githubusercontent.com/u/1?v=4"
-                                alt="Sudhanshu"
-                                className="w-full h-full object-cover scale-110 group-hover:scale-100 transition-transform duration-500"
-                            />
+                            <img src={image} alt={name} className="w-full h-full object-cover scale-110 group-hover:scale-100 transition-transform duration-500" />
                         </div>
                     </div>
 
@@ -46,17 +56,17 @@ const FounderSection = () => {
 
                     <div className="relative">
                         <Quote className="absolute -top-2 -left-4 w-8 h-8 text-[#f97316] -scale-x-100 hidden md:block" />
-                        <p className={`text-lg leading-relaxed italic ${textColor} opacity-80 md:pl-6`}>
-                            "Building YumPlatform to connect food lovers across the globe. I believe that good code is like a good recipe—it requires patience, passion, and the right ingredients."
-                        </p>
+                        <p className={`text-lg leading-relaxed italic ${textColor} opacity-80 md:pl-6`}>{quote}</p>
                     </div>
 
                     {/* Social / Contact Links */}
                     <div className="flex items-center justify-center md:justify-start gap-4 pt-4">
-                        <SocialLink icon={<Github size={20} />} href="https://github.com/yourusername" isDarkMode={isDarkMode} />
-                        <SocialLink icon={<Linkedin size={20} />} href="#" isDarkMode={isDarkMode} />
-                        <SocialLink icon={<Twitter size={20} />} href="#" isDarkMode={isDarkMode} />
-                        <SocialLink icon={<Instagram size={20} />} href="#" isDarkMode={isDarkMode}  />
+                        {Object.entries(socialLinks).map(([platform, href]) => {
+                            const Icon = SOCIAL_ICONS[platform];
+                            if (!Icon || !href) return null;
+
+                            return <SocialLink key={platform} href={href} icon={<Icon size={20} />} isDarkMode={isDarkMode} />;
+                        })}
                     </div>
                 </div>
             </div>
