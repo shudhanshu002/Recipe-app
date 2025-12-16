@@ -6,7 +6,6 @@ const SOCIAL_ICONS = {
     linkedin: Linkedin,
     twitter: Twitter,
     instagram: Instagram,
-    facebook: Facebook,
 };
 
 const FounderSection = (
