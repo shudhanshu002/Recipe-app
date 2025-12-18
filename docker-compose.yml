@@ -21,7 +21,7 @@ services:
     depends_on:
       - backend
 
-  # Database Service (Still good to keep for local testing, even if using Atlas)
+  # Database Service 
   mongo:
     image: mongo:latest
     ports:

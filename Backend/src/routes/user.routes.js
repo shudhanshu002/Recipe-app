@@ -49,15 +49,13 @@ router.route('/google').get(
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
-router
-  .route('/google/callback')
-  .get(
-    passport.authenticate('google', {
-      session: false,
-      failureRedirect: `${clientURL}/login`,
-    }),
-    handleSocialLogin
-  );
+router.route('/google/callback').get(
+  passport.authenticate('google', {
+    session: false,
+    failureRedirect: `${clientURL}/login`,
+  }),
+  handleSocialLogin
+);
 
 // Facebook
 router.route('/facebook').get(
@@ -65,15 +63,13 @@ router.route('/facebook').get(
   passport.authenticate('facebook', { scope: ['email'] })
 );
 
-router
-  .route('/facebook/callback')
-  .get(
-    passport.authenticate('facebook', {
-      session: false,
-      failureRedirect: `${clientURL}/login`,
-    }),
-    handleSocialLogin
-  );
+router.route('/facebook/callback').get(
+  passport.authenticate('facebook', {
+    session: false,
+    failureRedirect: `${clientURL}/login`,
+  }),
+  handleSocialLogin
+);
 
 router
   .route('/avatar')
