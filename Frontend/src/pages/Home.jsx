@@ -24,7 +24,7 @@ import Skeleton from '../components/ui/Skeleton';
 
 // icons and toast
 import 'react-toastify/dist/ReactToastify.css';
-import { Search, PlayCircle, Star, ChevronRight, X, Flame, Clock, ChefHat, Heart, Mail, ArrowRight, Zap } from 'lucide-react';
+import { Search, PlayCircle, Star, ChevronRight, X, Flame, Clock, ChefHat, Heart, Mail, ArrowRight, Zap, ChevronLeft } from 'lucide-react';
 import founderimg from '../assets/founder_new.png';
 
 
