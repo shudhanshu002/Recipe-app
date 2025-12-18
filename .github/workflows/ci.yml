@@ -1,67 +1,46 @@
-name: DevOps CI Pipeline
+name: CI Pipeline
 
-# 1. TRIGGER: Run on push, PR, or Manually
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main" ]
-  workflow_dispatch: 
+    branches: [ main ]
 
 jobs:
-  # 2. JOB: Verify Frontend (React + Vite)
-  frontend-ci:
-    name: Frontend Quality Check
+  build-and-test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./Frontend 
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: './Frontend/package-lock.json' 
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
-    - name: Install Frontend Dependencies
-      run: npm ci
+      # 1. Backend & Frontend Dependencies
+      - name: Install Dependencies
+        run: |
+          npm install
+          cd Backend && npm install
+          cd Frontend && npm install
 
-    # A. Static Code Analysis (Linting)
-    - name: Run ESLint
-      run: npm run lint
-      continue-on-error: true 
+      # 2. Run Linting (Fails if code is bad)
+      - name: Run Linting
+        run: npm run lint-all
 
-    # B. Build Test
-    - name: Verify Build
-      run: npm run build
+      # 3. Check Formatting (Fails if code is ugly)
+      - name: Check Formatting
+        run: npx prettier --check "**/*.{js,jsx,json,css,md}"
 
-  # 3. JOB: Verify Backend (Node + Express)
-  backend-ci:
-    name: Backend Quality Check
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./Backend 
-
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: './Backend/package-lock.json' 
-
-    - name: Install Backend Dependencies
-      run: npm ci
-
-    # A. Verify Syntax/Linting
-    - name: Basic Sanity Check
-      run: node -e "console.log('Backend syntax is valid')"
+      # 4. Build Frontend 
+      - name: Build Frontend
+        run: |
+          cd Frontend
+          npm run build
