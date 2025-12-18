@@ -1,26 +1,17 @@
-const path = require('path');
-
 module.exports = {
-  // 1. Frontend: Force relative paths
+  // 1. Frontend: Use npm run with prefix (Safe for Windows)
   'Frontend/**/*.{js,jsx}': (filenames) => {
-    const cwd = process.cwd();
-    const relativeFiles = filenames.map((f) => {
-      // Turn "C:/Users/.../Frontend/src/file.js" into "src/file.js"
-      return `"${path.relative(path.join(cwd, 'Frontend'), f).split(path.sep).join('/')}"`;
-    });
-    return `cd Frontend && npx eslint --fix ${relativeFiles.join(' ')}`;
+    // Quote files to handle spaces in paths
+    const files = filenames.map((f) => `"${f}"`).join(' ');
+    return `npm run lint:fix --prefix Frontend -- ${files}`;
   },
 
-  // 2. Backend: Force relative paths
+  // 2. Backend: Use npm run with prefix
   'Backend/**/*.js': (filenames) => {
-    const cwd = process.cwd();
-    const relativeFiles = filenames.map((f) => {
-      // Turn "C:/Users/.../Backend/index.js" into "index.js"
-      return `"${path.relative(path.join(cwd, 'Backend'), f).split(path.sep).join('/')}"`;
-    });
-    return `cd Backend && npx eslint --fix ${relativeFiles.join(' ')}`;
+    const files = filenames.map((f) => `"${f}"`).join(' ');
+    return `npm run lint:fix --prefix Backend -- ${files}`;
   },
 
-  // 3. Formatting (runs from root, so absolute paths are fine here)
+  // 3. Formatting
   '**/*.{json,md,css,html}': 'prettier --write',
 };
