@@ -1,11 +1,12 @@
 name: DevOps CI Pipeline
 
-# 1. TRIGGER: Run this pipeline on every push to the 'main' branch
+# 1. TRIGGER: Run on push, PR, or Manually
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch: 
 
 jobs:
   # 2. JOB: Verify Frontend (React + Vite)
@@ -14,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./frontend
+        working-directory: ./Frontend 
 
     steps:
     - name: Checkout Code
@@ -25,19 +26,17 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: './frontend/package-lock.json'
+        cache-dependency-path: './Frontend/package-lock.json' 
 
     - name: Install Frontend Dependencies
       run: npm ci
 
     # A. Static Code Analysis (Linting)
-    # This prevents bad code from reaching production
     - name: Run ESLint
       run: npm run lint
-      continue-on-error: true # Set to false to block deployment on style errors
+      continue-on-error: true 
 
     # B. Build Test
-    # This ensures your 'vercel.json' and React code actually compile
     - name: Verify Build
       run: npm run build
 
@@ -47,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./backend
+        working-directory: ./Backend 
 
     steps:
     - name: Checkout Code
@@ -58,12 +57,11 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: './backend/package-lock.json'
+        cache-dependency-path: './Backend/package-lock.json' 
 
     - name: Install Backend Dependencies
       run: npm ci
 
     # A. Verify Syntax/Linting
-    # (Assuming you have a lint script, otherwise npm install is a basic sanity check)
     - name: Basic Sanity Check
       run: node -e "console.log('Backend syntax is valid')"
