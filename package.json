@@ -1,0 +1,24 @@
+{
+  "name": "zaika-vault-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write \"**/*.{js,jsx,json,css,md}\"",
+    "install-all": "npm install && cd Backend && npm install && cd ../Frontend && npm install",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd Backend && npm run dev",
+    "client": "cd Frontend && npm run dev",
+    "lint-all": "concurrently \"cd Backend && npm run lint\" \"cd Frontend && npm run lint\"",
+    "build-all": "cd Frontend && npm run build",
+    "test-all": "concurrently \"cd Backend && npm test\" \"cd Frontend && npm test\"",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.2.0",
+    "@commitlint/config-conventional": "^20.2.0",
+    "concurrently": "^8.2.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4"
+  }
+}

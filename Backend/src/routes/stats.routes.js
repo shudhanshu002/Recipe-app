@@ -1,5 +1,9 @@
 import { Router } from 'express';
-import { getCuisineStats, getIngredientStats, getDashboardStats } from '../controllers/stats.controller.js';
+import {
+  getCuisineStats,
+  getIngredientStats,
+  getDashboardStats,
+} from '../controllers/stats.controller.js';
 
 const router = Router();
 

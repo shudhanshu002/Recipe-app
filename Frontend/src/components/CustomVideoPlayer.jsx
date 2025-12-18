@@ -5,101 +5,126 @@ import Hls from 'hls.js';
 import useThemeStore from '../store/useThemeStore';
 
 const CustomVideoPlayer = ({ src, poster, captions = [] }) => {
-    const { theme } = useThemeStore();
-    const isDarkMode = theme === 'dark';
-    const ref = useRef(null);
+  const { theme } = useThemeStore();
+  const isDarkMode = theme === 'dark';
+  const ref = useRef(null);
 
-    
-    const plyrOptions = {
-        controls: ['play-large', 'restart', 'rewind', 'play', 'fast-forward', 'progress', 'current-time', 'duration', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
-        settings: ['captions', 'quality', 'speed', 'loop'],
-        speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-        // Default quality config (will be overwritten by HLS)
-        quality: { default: 576, options: [4320, 2880, 2160, 1440, 1080, 720, 576, 480, 360, 240] },
-        keyboard: { focused: true, global: true },
-        tooltips: { controls: true, seek: true },
+  const plyrOptions = {
+    controls: [
+      'play-large',
+      'restart',
+      'rewind',
+      'play',
+      'fast-forward',
+      'progress',
+      'current-time',
+      'duration',
+      'mute',
+      'volume',
+      'captions',
+      'settings',
+      'pip',
+      'airplay',
+      'fullscreen',
+    ],
+    settings: ['captions', 'quality', 'speed', 'loop'],
+    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+    // Default quality config (will be overwritten by HLS)
+    quality: {
+      default: 576,
+      options: [4320, 2880, 2160, 1440, 1080, 720, 576, 480, 360, 240],
+    },
+    keyboard: { focused: true, global: true },
+    tooltips: { controls: true, seek: true },
+  };
+
+  useEffect(() => {
+    const loadVideo = async () => {
+      const video = document.querySelector('.plyr__video-wrapper video');
+      if (!video || !src) return;
+
+      // 1. Convert Cloudinary MP4 to HLS (m3u8) for streaming & quality support
+      const hlsUrl =
+        src.includes('cloudinary') && src.endsWith('.mp4')
+          ? src.replace('.mp4', '.m3u8')
+          : src;
+
+      const player = ref.current?.plyr;
+
+      // 2. Initialize HLS if supported (Chrome, Firefox, Edge)
+      if (
+        Hls.isSupported() &&
+        (hlsUrl.endsWith('.m3u8') || src.includes('m3u8'))
+      ) {
+        const hls = new Hls({
+          maxMaxBufferLength: 30,
+        });
+
+        hls.loadSource(hlsUrl);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+          // Extract available quality levels from HLS manifest
+          const availableQualities = hls.levels.map((l) => l.height);
+
+          // Add 'Auto' option (represented by 0 or undefined usually, but Plyr likes explicit numbers)
+          availableQualities.reverse();
+
+          if (player) {
+            // Update Plyr settings to match HLS levels
+            player.config.quality = {
+              default: availableQualities[0],
+              options: availableQualities,
+              forced: true,
+              onChange: (newQuality) => {
+                // Map Plyr selection back to HLS level index
+                hls.levels.forEach((level, levelIndex) => {
+                  if (level.height === newQuality) {
+                    hls.currentLevel = levelIndex;
+                  }
+                });
+              },
+            };
+            // Force menu update if needed (often automatic in Plyr-React)
+          }
+        });
+      }
+      // 3. Native HLS (Safari)
+      else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = hlsUrl;
+      }
+      // 4. Fallback (Standard MP4)
+      else {
+        video.src = src;
+      }
     };
 
-    useEffect(() => {
-        const loadVideo = async () => {
-            const video = document.querySelector('.plyr__video-wrapper video');
-            if (!video || !src) return;
+    loadVideo();
+  }, [src]);
 
-            // 1. Convert Cloudinary MP4 to HLS (m3u8) for streaming & quality support
-            const hlsUrl = src.includes('cloudinary') && src.endsWith('.mp4') ? src.replace('.mp4', '.m3u8') : src;
+  const source = {
+    type: 'video',
+    sources: [
+      {
+        src: src, // HLS logic inside useEffect overrides this for playback, but Plyr needs a base src
+        type: 'video/mp4',
+      },
+    ],
+    poster: poster,
+    tracks: captions, // Pass VTT tracks here
+  };
 
-            const player = ref.current?.plyr;
+  return (
+    // aspect-video prevents layout shift (jumping)
+    <div className="w-full rounded-xl overflow-hidden shadow-lg relative z-0 group bg-black aspect-video">
+      <div
+        className={`plyr-wrapper w-full h-full ${isDarkMode ? 'dark-theme' : 'light-theme'}`}
+      >
+        <Plyr ref={ref} options={plyrOptions} source={source} />
+      </div>
 
-            // 2. Initialize HLS if supported (Chrome, Firefox, Edge)
-            if (Hls.isSupported() && (hlsUrl.endsWith('.m3u8') || src.includes('m3u8'))) {
-                const hls = new Hls({
-                    maxMaxBufferLength: 30, 
-                });
-
-                hls.loadSource(hlsUrl);
-                hls.attachMedia(video);
-
-                hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-                    // Extract available quality levels from HLS manifest
-                    const availableQualities = hls.levels.map((l) => l.height);
-
-                    // Add 'Auto' option (represented by 0 or undefined usually, but Plyr likes explicit numbers)
-                    availableQualities.reverse();
-
-                    if (player) {
-                        // Update Plyr settings to match HLS levels
-                        player.config.quality = {
-                            default: availableQualities[0],
-                            options: availableQualities,
-                            forced: true,
-                            onChange: (newQuality) => {
-                                // Map Plyr selection back to HLS level index
-                                hls.levels.forEach((level, levelIndex) => {
-                                    if (level.height === newQuality) {
-                                        hls.currentLevel = levelIndex;
-                                    }
-                                });
-                            },
-                        };
-                        // Force menu update if needed (often automatic in Plyr-React)
-                    }
-                });
-            }
-            // 3. Native HLS (Safari)
-            else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                video.src = hlsUrl;
-            }
-            // 4. Fallback (Standard MP4)
-            else {
-                video.src = src;
-            }
-        };
-
-        loadVideo();
-    }, [src]);
-
-
-    const source = {
-        type: 'video',
-        sources: [
-            {
-                src: src, // HLS logic inside useEffect overrides this for playback, but Plyr needs a base src
-                type: 'video/mp4',
-            },
-        ],
-        poster: poster,
-        tracks: captions, // Pass VTT tracks here
-    };
-
-    return (
-        // aspect-video prevents layout shift (jumping)
-        <div className="w-full rounded-xl overflow-hidden shadow-lg relative z-0 group bg-black aspect-video">
-            <div className={`plyr-wrapper w-full h-full ${isDarkMode ? 'dark-theme' : 'light-theme'}`}>
-                <Plyr ref={ref} options={plyrOptions} source={source} />
-            </div>
-
-            {/* Custom Theme Styling */}
-            <style>{`
+      {/* Custom Theme Styling */}
+      <style>{`
                 :root {
                     --plyr-color-main: #ff642f;
                     --plyr-video-background: #000;
@@ -140,8 +165,8 @@ const CustomVideoPlayer = ({ src, poster, captions = [] }) => {
                     outline-offset: 2px;
                 }
             `}</style>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default CustomVideoPlayer;

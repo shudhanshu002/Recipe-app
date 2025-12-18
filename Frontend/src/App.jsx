@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import {
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from 'react-router-dom';
 
 // api
 import api from './lib/axios';
@@ -24,16 +30,21 @@ import BlogFeed from './pages/BlogFeed';
 import CreateBlog from './pages/CreateBlog';
 import BlogDetail from './pages/BlogDetail';
 import Community from './pages/Community';
-import PaymentSuccess from './pages/PaymentSuccess'; 
+import PaymentSuccess from './pages/PaymentSuccess';
 import RecipeFeed from './pages/RecipeFeed';
 import ChefSpotlight from './pages/ChefSpotlight';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuthStore();
-  
+
   // Wait for auth check to finish before redirecting
-  if (loading) return <div className="flex items-center justify-center h-screen dark:bg-[#121212] dark:text-white">Loading...</div>;
-  
+  if (loading)
+    return (
+      <div className="flex items-center justify-center h-screen dark:bg-[#121212] dark:text-white">
+        Loading...
+      </div>
+    );
+
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 };
@@ -64,11 +75,11 @@ const scrollbarStyles = `
 `;
 
 function App() {
-  const [showSplash, setShowSplash] = useState(()=> {
+  const [showSplash, setShowSplash] = useState(() => {
     return !sessionStorage.getItem('hasSeenSplash');
   });
   const [authChecked, setAuthChecked] = useState(false);
-  
+
   const { login, logout, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -78,11 +89,11 @@ function App() {
     const checkAuth = async () => {
       try {
         const response = await api.post('/users/refresh-token');
-        
+
         if (response.data?.data?.user) {
-            login(response.data.data.user);
+          login(response.data.data.user);
         } else {
-            logout();
+          logout();
         }
       } catch (error) {
         logout();
@@ -91,23 +102,23 @@ function App() {
       }
     };
     checkAuth();
-  }, []); 
+  }, [login, logout]);
 
   useEffect(() => {
-      window.scrollTo(0, 0);
-  }, [location.pathname]); 
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   // 2. Handle Splash Finish
   const handleSplashFinish = () => {
     sessionStorage.setItem('hasSeenSplash', 'true');
     setShowSplash(false);
-    navigate('/'); 
+    navigate('/');
   };
 
   // 3. Render Splash Screen until Auth is ready AND Animation is done
   // if (showSplash) {
   //   return (
-  //       <SplashScreen 
+  //       <SplashScreen
   //           onFinish={() => {
   //               if (authChecked) handleSplashFinish();
   //               else {
@@ -119,52 +130,120 @@ function App() {
   //                       }
   //                   }, 100);
   //               }
-  //           }} 
+  //           }}
   //           readyToFinish = {authChecked}
   //       />
   //   );
   // }
 
   // if (!showSplash && !authChecked) {
-  //     return <div className="w-screen h-screen bg-black" />; 
+  //     return <div className="w-screen h-screen bg-black" />;
   // }
 
   return (
     <>
-    <style>{scrollbarStyles}</style>
-    <Routes>
-      
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Home />} />
-        <Route path="/recipes/:id" element={<RecipeDetail />} />
-        <Route path="/profile/:username" element={<Profile />} />
-        <Route path="/chef/:id" element={<ChefSpotlight />} />
-        <Route path="/community" element={<Community />} />
-        <Route path="/recipes" element={<RecipeFeed />} />
-        
-        {/* Blog Routes */}
-        <Route path="/blogs" element={<BlogFeed />} />
-        <Route path="/blogs/:id" element={<BlogDetail />} />
-        
-        {/* Protected Routes */}
-        <Route path="/create-recipe" element={<ProtectedRoute><CreateRecipe /></ProtectedRoute>} />
-        <Route path="/create-blog" element={<ProtectedRoute><CreateBlog /></ProtectedRoute>} />
-        <Route path="/meal-planner" element={<ProtectedRoute><MealPlanner /></ProtectedRoute>} />
-        <Route path="/shopping-list" element={<ProtectedRoute><ShoppingList /></ProtectedRoute>} />
-        <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
-        <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-        <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
-      </Route>
-      
-      {/* Auth Routes (Redirect if already logged in) */}
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/register" element={isAuthenticated ? <Navigate to="/" replace /> : <Register />} />
-      
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      <style>{scrollbarStyles}</style>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="/recipes/:id" element={<RecipeDetail />} />
+          <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/chef/:id" element={<ChefSpotlight />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/recipes" element={<RecipeFeed />} />
+
+          {/* Blog Routes */}
+          <Route path="/blogs" element={<BlogFeed />} />
+          <Route path="/blogs/:id" element={<BlogDetail />} />
+
+          {/* Protected Routes */}
+          <Route
+            path="/create-recipe"
+            element={
+              <ProtectedRoute>
+                <CreateRecipe />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/create-blog"
+            element={
+              <ProtectedRoute>
+                <CreateBlog />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/meal-planner"
+            element={
+              <ProtectedRoute>
+                <MealPlanner />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/shopping-list"
+            element={
+              <ProtectedRoute>
+                <ShoppingList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/favorites"
+            element={
+              <ProtectedRoute>
+                <Favorites />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/subscription"
+            element={
+              <ProtectedRoute>
+                <Subscription />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payment/success"
+            element={
+              <ProtectedRoute>
+                <PaymentSuccess />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* Auth Routes (Redirect if already logged in) */}
+        <Route
+          path="/login"
+          element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
+        />
+        <Route
+          path="/register"
+          element={isAuthenticated ? <Navigate to="/" replace /> : <Register />}
+        />
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </>
   );
 }

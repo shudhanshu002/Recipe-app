@@ -1,80 +1,82 @@
 import mongoose from 'mongoose';
 
 const reactionSchema = new mongoose.Schema(
-    {
-        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-        emoji: { type: String, required: true, enum: ['👍', '❤️', '😂', '😮', '😢', '😡'] },
+  {
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    emoji: {
+      type: String,
+      required: true,
+      enum: ['👍', '❤️', '😂', '😮', '😢', '😡'],
     },
-    { _id: false },
+  },
+  { _id: false }
 );
 
 const replySchema = new mongoose.Schema({
-    content: {
-        type: String,
-        required: true,
+  content: {
+    type: String,
+    required: true,
+  },
+  media: {
+    type: String,
+  },
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  likes: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
     },
-    media: {
-        type: String, 
-    },
-    author: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-    },
-    likes: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
-        },
-    ],
-    parentId: {
-        type: mongoose.Schema.Types.ObjectId,
-        default: null,
-    },
-    reactions: [
-        reactionSchema
-    ],
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
+  ],
+  parentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    default: null,
+  },
+  reactions: [reactionSchema],
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 const reviewSchema = new mongoose.Schema(
-    {
-        content: {
-            type: String,
-            required: true,
-        },
-        rating: {
-            type: Number,
-            required: true,
-            min: 1,
-            max: 5,
-        },
-        media: {
-            type: String,
-        },
-        author: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User', 
-            required: true,
-        },
-        recipe: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Recipe', 
-            required: true,
-        },
-        likes: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'User', 
-            },
-        ],
-        reactions: [reactionSchema],
-        replies: [replySchema], 
+  {
+    content: {
+      type: String,
+      required: true,
     },
-    { timestamps: true },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+    },
+    media: {
+      type: String,
+    },
+    author: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    recipe: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Recipe',
+      required: true,
+    },
+    likes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    reactions: [reactionSchema],
+    replies: [replySchema],
+  },
+  { timestamps: true }
 );
 
 export const Review = mongoose.model('Review', reviewSchema);

@@ -1,7 +1,8 @@
 export const getOtpTemplate = (otp) => {
-    const logoUrl = 'https://res.cloudinary.com/df3y3pc1t/image/upload/v1765227353/wrriten_dark1_qqmy1c.png';
+  const logoUrl =
+    'https://res.cloudinary.com/df3y3pc1t/image/upload/v1765227353/wrriten_dark1_qqmy1c.png';
 
-    return `
+  return `
   <!DOCTYPE html>
   <html>
   <head>

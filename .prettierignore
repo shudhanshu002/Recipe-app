@@ -1,0 +1,20 @@
+Ignore artifacts:
+
+dist
+build
+coverage
+node_modules
+.vscode
+.git
+
+Backend artifacts
+
+Backend/node_modules
+Backend/dist
+Backend/coverage
+
+Frontend artifacts
+
+Frontend/node_modules
+Frontend/dist
+Frontend/build

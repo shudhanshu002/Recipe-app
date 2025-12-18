@@ -1,5 +1,9 @@
 import { Router } from 'express';
-import { createOrder, verifyPayment, getRazorpayKey } from '../controllers/payment.controller.js';
+import {
+  createOrder,
+  verifyPayment,
+  getRazorpayKey,
+} from '../controllers/payment.controller.js';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
 
 const router = Router();

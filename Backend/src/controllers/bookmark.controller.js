@@ -5,36 +5,44 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 
 // 1. attack bookmark to recipe
 const toggleBookmark = asyncHandler(async (req, res) => {
-    const { recipeId } = req.params;
+  const { recipeId } = req.params;
 
-    const existingBookmark = await Bookmark.findOne({
-        user: req.user._id,
-        recipe: recipeId,
+  const existingBookmark = await Bookmark.findOne({
+    user: req.user._id,
+    recipe: recipeId,
+  });
+
+  if (existingBookmark) {
+    await Bookmark.findByIdAndDelete(existingBookmark._id);
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { bookmarked: false }, 'Removed from favorites')
+      );
+  } else {
+    await Bookmark.create({
+      user: req.user._id,
+      recipe: recipeId,
     });
-
-    if (existingBookmark) {
-        await Bookmark.findByIdAndDelete(existingBookmark._id);
-        return res.status(200).json(new ApiResponse(200, { bookmarked: false }, 'Removed from favorites'));
-    } else {
-        await Bookmark.create({
-            user: req.user._id,
-            recipe: recipeId,
-        });
-        return res.status(200).json(new ApiResponse(200, { bookmarked: true }, 'Added to favorites'));
-    }
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { bookmarked: true }, 'Added to favorites'));
+  }
 });
 
 // 2. fetch all recipe with bookmark
 const getUserBookmarks = asyncHandler(async (req, res) => {
-    const bookmarks = await Bookmark.find({ user: req.user._id }).populate({
-        path: 'recipe',
-        populate: {
-            path: 'createdBy', 
-            select: 'username avatar', 
-        },
-    });
+  const bookmarks = await Bookmark.find({ user: req.user._id }).populate({
+    path: 'recipe',
+    populate: {
+      path: 'createdBy',
+      select: 'username avatar',
+    },
+  });
 
-    return res.status(200).json(new ApiResponse(200, bookmarks, 'Bookmarks fetched'));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, bookmarks, 'Bookmarks fetched'));
 });
 
 export { toggleBookmark, getUserBookmarks };

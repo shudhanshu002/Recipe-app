@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import { getShoppingList, addShoppingItem, toggleItemCheck, removeShoppingItem, addFromRecipe } from '../controllers/shoppinglist.controller.js';
+import {
+  getShoppingList,
+  addShoppingItem,
+  toggleItemCheck,
+  removeShoppingItem,
+  addFromRecipe,
+} from '../controllers/shoppinglist.controller.js';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
 
 const router = Router();

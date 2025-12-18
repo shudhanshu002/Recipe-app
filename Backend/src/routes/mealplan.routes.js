@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { addToMealPlan, getWeeklyPlan,getMealHistory, removeFromMealPlan } from '../controllers/mealplan.controller.js';
+import {
+  addToMealPlan,
+  getWeeklyPlan,
+  getMealHistory,
+  removeFromMealPlan,
+} from '../controllers/mealplan.controller.js';
 import { verifyJWT } from '../middlewares/auth.middleware.js';
 
 const router = Router();

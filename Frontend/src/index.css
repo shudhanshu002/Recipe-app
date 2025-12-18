@@ -97,7 +97,8 @@
 }
 @font-face {
   font-family: 'Bitter';
-  src: url('../assets/fonts/Bitter/Bitter-ExtraBoldItalic.woff2') format('woff2');
+  src: url('../assets/fonts/Bitter/Bitter-ExtraBoldItalic.woff2')
+    format('woff2');
   font-weight: 800;
   font-style: italic;
 }
@@ -116,7 +117,6 @@
   font-style: italic;
 }
 
-
 /* ========================= */
 /*    DANCING SCRIPT FONT     */
 /* ========================= */
@@ -124,14 +124,16 @@
 /* Regular */
 @font-face {
   font-family: 'Dancing Script';
-  src: url('../assets/fonts/DancingScript/DancingScript-Regular.ttf') format('truetype');
+  src: url('../assets/fonts/DancingScript/DancingScript-Regular.ttf')
+    format('truetype');
   font-weight: 400;
   font-style: normal;
 }
 
 @font-face {
   font-family: 'Play';
-  src: url('../assets/fonts/DancingScript/PlaywriteNO-Regular.ttf') format('truetype');
+  src: url('../assets/fonts/DancingScript/PlaywriteNO-Regular.ttf')
+    format('truetype');
   font-weight: 400;
   font-style: normal;
 }
@@ -139,7 +141,8 @@
 /* Medium */
 @font-face {
   font-family: 'Dancing Script';
-  src: url('../assets/fonts/DancingScript/DancingScript-Medium.ttf') format('truetype');
+  src: url('../assets/fonts/DancingScript/DancingScript-Medium.ttf')
+    format('truetype');
   font-weight: 500;
   font-style: normal;
 }
@@ -147,7 +150,8 @@
 /* SemiBold */
 @font-face {
   font-family: 'Dancing Script';
-  src: url('../assets/fonts/DancingScript/DancingScript-SemiBold.ttf') format('truetype');
+  src: url('../assets/fonts/DancingScript/DancingScript-SemiBold.ttf')
+    format('truetype');
   font-weight: 600;
   font-style: normal;
 }
@@ -155,7 +159,8 @@
 /* Bold */
 @font-face {
   font-family: 'Dancing Script';
-  src: url('../assets/fonts/DancingScript/DancingScript-Bold.ttf') format('truetype');
+  src: url('../assets/fonts/DancingScript/DancingScript-Bold.ttf')
+    format('truetype');
   font-weight: 700;
   font-style: normal;
 }
@@ -167,12 +172,18 @@
   font-style: normal;
 }
 
-
-
-.font-bitter { font-family: 'Bitter', serif; }
-.font-dancing { font-family: 'Dancing Script', cursive; }
-.font-cursive { font-family: cursive;}
-.font-recur {font-family: 'Black Drama Demo','Dancing Script';}
+.font-bitter {
+  font-family: 'Bitter', serif;
+}
+.font-dancing {
+  font-family: 'Dancing Script', cursive;
+}
+.font-cursive {
+  font-family: cursive;
+}
+.font-recur {
+  font-family: 'Black Drama Demo', 'Dancing Script';
+}
 
 body {
   font-family: 'Bitter', serif;

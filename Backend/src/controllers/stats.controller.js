@@ -1,61 +1,60 @@
-import { Recipe } from "../models/recipe.model.js";
-import { User } from "../models/user.model.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
+import { Recipe } from '../models/recipe.model.js';
+import { User } from '../models/user.model.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 // 1. getcusine stat
-const getCuisineStats = asyncHandler(async (req, res)=> {
-    const cuisines = await Recipe.aggregate([
-        {
-            $group: {
-                _id: "$cuisine",
-                count: { $sum: 1}
-            }
-        },
-        { $sort: { count: -1 }}
-    ]);
+const getCuisineStats = asyncHandler(async (req, res) => {
+  const cuisines = await Recipe.aggregate([
+    {
+      $group: {
+        _id: '$cuisine',
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { count: -1 } },
+  ]);
 
-    return res.status(200).json(new ApiResponse(200, cuisines, "Cuisine stats fetched successfully"));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, cuisines, 'Cuisine stats fetched successfully'));
 });
 
 // 2. get ingrdient stats
-const getIngredientStats = asyncHandler(async (req, res)=> {
-    const ingredients = await Recipe.aggregate([
-        {
-            $group: {
-                _id: "$mainIngredient",
-                count: {$sum: 1}
-            }
-        },
-        {$sort: {count: -1}},
-        {$limit: 10}
-    ]);
+const getIngredientStats = asyncHandler(async (req, res) => {
+  const ingredients = await Recipe.aggregate([
+    {
+      $group: {
+        _id: '$mainIngredient',
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { count: -1 } },
+    { $limit: 10 },
+  ]);
 
-    return res.status(200).json(new ApiResponse(200, ingredients, 'Ingredient stats fetched'));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, ingredients, 'Ingredient stats fetched'));
 });
 
 // 3. get dashboard stat
 const getDashboardStats = asyncHandler(async (req, res) => {
-    const totalRecipes = await Recipe.countDocuments();
-    const totalUsers = await User.countDocuments();
-    const premiumRecipes = await Recipe.countDocuments({ isPremium: true });
+  const totalRecipes = await Recipe.countDocuments();
+  const totalUsers = await User.countDocuments();
+  const premiumRecipes = await Recipe.countDocuments({ isPremium: true });
 
-    return res.status(200).json(
-        new ApiResponse(
-            200,
-            {
-                totalRecipes,
-                totalUsers,
-                premiumRecipes,
-            },
-            'Dashboard stats fetched',
-        ),
-    );
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        totalRecipes,
+        totalUsers,
+        premiumRecipes,
+      },
+      'Dashboard stats fetched'
+    )
+  );
 });
 
-
-export {
-    getCuisineStats,
-    getIngredientStats,
-    getDashboardStats
-}
+export { getCuisineStats, getIngredientStats, getDashboardStats };
