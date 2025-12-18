@@ -19,7 +19,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.1.17",
     "@tiptap/extension-code-block-lowlight": "^3.11.1",
-    "@tiptap/extension-hard-break": "^3.11.1",
+    "@tiptap/extension-hard-break": "^3.13.0",
     "@tiptap/extension-highlight": "^3.11.1",
     "@tiptap/extension-horizontal-rule": "^3.11.1",
     "@tiptap/extension-placeholder": "^3.11.1",
