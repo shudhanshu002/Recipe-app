@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Backend Service
   backend:
@@ -8,7 +6,10 @@ services:
       - "5000:5000"
     environment:
       - PORT=5000
-      - MONGO_URI=mongodb://mongo:27017/zaika-vault
+      # Using your Cloud Database
+      - MONGO_URI=mongodb+srv://sudhanshu6073:Sudhanshu002@cluster0.haxwwwx.mongodb.net/recipe_db
+      # FIXED: Allow the Docker Frontend (localhost:3000) to access the API
+      - CORS_ORIGIN=http://localhost:3000
     depends_on:
       - mongo
 
@@ -20,7 +21,7 @@ services:
     depends_on:
       - backend
 
-  # Database Service (Runs a local MongoDB inside Docker)
+  # Database Service (Still good to keep for local testing, even if using Atlas)
   mongo:
     image: mongo:latest
     ports:
