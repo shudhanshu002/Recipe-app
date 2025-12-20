@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/axios';
 import useThemeStore from '../store/useThemeStore';
@@ -16,7 +16,6 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import { toast, ToastContainer } from 'react-toastify';
-import { useCallback } from 'react';
 
 const MealPlanner = () => {
   const { theme } = useThemeStore();
@@ -26,7 +25,11 @@ const MealPlanner = () => {
   const [weeklyPlan, setWeeklyPlan] = useState([]);
   const [historyPlan, setHistoryPlan] = useState([]);
   const [allMealsForStrip, setAllMealsForStrip] = useState([]);
+  
+  // Start with loading true only on mount
   const [loading, setLoading] = useState(true);
+  
+  // Initialize current date
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const [showModal, setShowModal] = useState(false);
@@ -36,7 +39,7 @@ const MealPlanner = () => {
   const [selectedMealType, setSelectedMealType] = useState('Dinner');
   const [addingMeal, setAddingMeal] = useState(false);
 
-  // Creates a date object that is safe for display in the current timezone
+  // Helper to get start of week (Sunday)
   const getStartOfWeek = (date) => {
     const d = new Date(date);
     const day = d.getDay();
@@ -44,37 +47,26 @@ const MealPlanner = () => {
     return new Date(d.setDate(diff));
   };
 
-  const startOfWeek = getStartOfWeek(currentDate);
-  const weekDates = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(startOfWeek);
-    d.setDate(startOfWeek.getDate() + i);
-    return d;
-  });
+  // MEMOIZE weekDates so it doesn't change on every render
+  // This calculates the 7 days based on the current 'currentDate'
+  const weekStart = useMemo(() => getStartOfWeek(currentDate), [currentDate]);
+  
+  const weekDates = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+      return d;
+    });
+  }, [weekStart]);
 
-  // const fetchPlan = async () => {
-  //     try {
-  //         const startStr = weekDates[0].toISOString();
-  //         const endStr = weekDates[6].toISOString();
-
-  //         const [weekRes, historyRes] = await Promise.all([api.get(`/mealplanner?startDate=${startStr}&endDate=${endStr}`), api.get(`/mealplanner/history`)]);
-
-  //         const weekData = weekRes.data.data || [];
-  //         const historyData = historyRes.data.data || [];
-
-  //         setWeeklyPlan(weekData);
-  //         setHistoryPlan(historyData);
-
-  //         const combined = [...historyData, ...weekData].sort((a, b) => new Date(a.date) - new Date(b.date));
-  //         setAllMealsForStrip(combined);
-  //     } catch (error) {
-  //         console.error(error);
-  //     } finally {
-  //         setLoading(false);
-  //     }
-  // };
+  // Unique identifier for the week to prevent re-fetching if we just change day in same week
+  const weekIdentifier = weekStart.toISOString().split('T')[0];
 
   const fetchPlan = useCallback(async () => {
     try {
+      // Don't set loading true here to avoid full page flicker on minor updates
+      // We only set it true when changing weeks (handled in useEffect)
+      
       const startStr = weekDates[0].toISOString();
       const endStr = weekDates[6].toISOString();
 
@@ -95,12 +87,13 @@ const MealPlanner = () => {
       setAllMealsForStrip(combined);
     } catch (error) {
       console.error(error);
+      toast.error("Failed to load meal plan");
     } finally {
       setLoading(false);
     }
-  }, [weekDates]);
+  }, [weekIdentifier, weekDates]); // Only re-create if the WEEK changes
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
       const response = await api.get(`/mealplanner/history`);
@@ -110,17 +103,21 @@ const MealPlanner = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
+  // Main Effect: Triggers only when View changes or Week changes
   useEffect(() => {
     if (view === 'week') {
-      setLoading(true);
+      // Only show full loader if we don't have data yet or switched weeks
+      if (weeklyPlan.length === 0) setLoading(true); 
       fetchPlan();
     } else {
       fetchHistory();
     }
-  }, [currentDate, view, fetchPlan]);
+  }, [view, weekIdentifier, fetchPlan]); 
+  // ^ Removed 'currentDate' from deps. 'weekIdentifier' handles the week change logic.
 
+  // Search Effect
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -140,6 +137,8 @@ const MealPlanner = () => {
   const handleStripDateClick = (date) => {
     setCurrentDate(new Date(date));
     setView('week');
+    // No need to fetchPlan here, the date change will update 'currentDate', 
+    // but unless the week changes, we just update the UI highlight.
   };
 
   const handleDateChange = (e) => {
@@ -151,23 +150,32 @@ const MealPlanner = () => {
     const d = new Date(currentDate);
     d.setDate(d.getDate() - 7);
     setCurrentDate(d);
+    setLoading(true); // Explicitly show loading when changing weeks
   };
+
   const handleNextWeek = () => {
     const d = new Date(currentDate);
     d.setDate(d.getDate() + 7);
     setCurrentDate(d);
+    setLoading(true); // Explicitly show loading when changing weeks
   };
 
   const handleDelete = async (planId, isHistory = false) => {
     if (!confirm('Remove this meal?')) return;
+    
+    // Optimistic update: Remove from UI immediately
+    const filterFn = (item) => item._id !== planId;
+    setWeeklyPlan((prev) => prev.filter(filterFn));
+    setHistoryPlan((prev) => prev.filter(filterFn));
+    setAllMealsForStrip((prev) => prev.filter(filterFn));
+
     try {
       await api.delete(`/mealplanner/${planId}`);
-      const filterFn = (item) => item._id !== planId;
-      setWeeklyPlan((prev) => prev.filter(filterFn));
-      setHistoryPlan((prev) => prev.filter(filterFn));
-      setAllMealsForStrip((prev) => prev.filter(filterFn));
+      toast.success("Meal removed");
     } catch (error) {
       toast.error('Failed to delete');
+      // Re-fetch if failed to ensure sync
+      fetchPlan();
     }
   };
 
@@ -185,20 +193,16 @@ const MealPlanner = () => {
         mealType: selectedMealType,
       });
 
-      await fetchPlan();
+      await fetchPlan(); // Refresh data quietly
       setShowModal(false);
       setSearchQuery('');
+      toast.success("Meal added successfully");
     } catch (error) {
       console.error(error);
       toast.error('Failed to add meal');
     } finally {
       setAddingMeal(false);
     }
-  };
-
-  const openAddModal = (date) => {
-    setSelectedDay(date);
-    setShowModal(true);
   };
 
   const textColor = isDarkMode ? 'text-white' : 'text-gray-900';
@@ -228,7 +232,8 @@ const MealPlanner = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 mb-20 font-dancing">
-      <ToastContainer />
+      <ToastContainer position="bottom-right" theme={isDarkMode ? "dark" : "light"} />
+      
       {/* Header Section */}
       <div className="flex flex-col xl:flex-row justify-between items-center gap-6">
         <div className="shrink-0 text-center md:text-left">
@@ -236,13 +241,13 @@ const MealPlanner = () => {
           <div className="flex gap-4 mt-2 justify-center md:justify-start">
             <button
               onClick={() => setView('week')}
-              className={`text-sm font-bold flex items-center gap-2 ${view === 'week' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-gray-400'}`}
+              className={`text-sm font-bold flex items-center gap-2 ${view === 'week' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-gray-100'}`}
             >
               <CalendarDays size={16} /> Weekly Plan
             </button>
             <button
               onClick={() => setView('history')}
-              className={`text-sm font-bold flex items-center gap-2 ${view === 'history' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-gray-400'}`}
+              className={`text-sm font-bold flex items-center gap-2 ${view === 'history' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-gray-100'}`}
             >
               <History size={16} /> Past History
             </button>
@@ -283,27 +288,32 @@ const MealPlanner = () => {
         )}
       </div>
 
+      {/* Main Content Area - Reduced loading flicker */}
       {loading ? (
-        <div className={`text-center py-20 ${textColor}`}>Loading...</div>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className={`animate-spin ${textColor}`} size={40} />
+        </div>
       ) : (
         <>
           {/* Week View */}
           {view === 'week' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 animate-fadeIn">
               {weekDates.map((date) => {
                 const dateStr = date.toDateString();
                 const meals = weeklyPlan.filter(
                   (p) => new Date(p.date).toDateString() === dateStr
                 );
+                // Highlight the selected day
                 const isSelectedDate = currentDate.toDateString() === dateStr;
                 const isToday = new Date().toDateString() === dateStr;
 
                 return (
                   <div
                     key={date.toISOString()}
-                    className={`h-[350px] flex flex-col p-3 rounded-xl border transition-all duration-300 ${
+                    onClick={() => setCurrentDate(date)} // Clicking card selects it
+                    className={`h-[350px] flex flex-col p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
                       isSelectedDate
-                        ? 'ring-2 ring-[#f97316] border-[#f97316]'
+                        ? 'ring-2 ring-[#f97316] border-[#f97316] shadow-lg scale-[1.02]'
                         : isToday
                           ? todayBg
                           : cardBg
@@ -337,7 +347,10 @@ const MealPlanner = () => {
                               {plan.mealType}
                             </span>
                             <button
-                              onClick={() => handleDelete(plan._id)}
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent card click
+                                handleDelete(plan._id);
+                              }}
                               className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                             >
                               <Trash2 size={12} />
@@ -346,6 +359,7 @@ const MealPlanner = () => {
                           <Link
                             to={`/recipes/${plan.recipe?._id}`}
                             className="flex gap-2 items-center"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <img
                               src={
@@ -366,7 +380,8 @@ const MealPlanner = () => {
                     </div>
 
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setSelectedDay(date);
                         setShowModal(true);
                       }}
@@ -386,7 +401,7 @@ const MealPlanner = () => {
 
           {/* History View */}
           {view === 'history' && (
-            <div className="space-y-6">
+            <div className="space-y-6 animate-fadeIn">
               {Object.keys(groupedHistory).length > 0 ? (
                 Object.entries(groupedHistory).map(([date, meals]) => (
                   <div
@@ -449,7 +464,7 @@ const MealPlanner = () => {
 
       {/* Add Meal Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fadeIn">
           <div
             className={`w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[80vh] ${modalBg}`}
           >

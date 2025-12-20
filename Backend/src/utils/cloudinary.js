@@ -10,31 +10,56 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const uploadOnCloudinary = async (localFilePath) => {
-  try {
-    if (!localFilePath) return null;
-
-    console.log('Uploading file to Cloudinary:', localFilePath);
-
-    const response = await cloudinary.uploader.upload(localFilePath, {
-      resource_type: 'auto',
-      chunk_size: 6000000,
-      timeout: 600000, // 60 seconds timeout for larger files
-    });
-
-    console.log('Cloudinary Upload Success:', response.url);
-
-    fs.unlinkSync(localFilePath);
-    return response;
-  } catch (error) {
-    console.error('Cloudinary Upload Failed Error:', error.message);
-
-    if (fs.existsSync(localFilePath)) {
-      fs.unlinkSync(localFilePath);
+// FIX: Added 'type' parameter defaulting to "auto"
+const uploadOnCloudinary = async (localFilePath, type = 'auto') => {
+  return new Promise((resolve, reject) => {
+    if (!localFilePath) {
+      return resolve(null);
     }
 
-    return null;
+    console.log(`Uploading ${type} to Cloudinary: ${localFilePath}`);
+
+    cloudinary.uploader.upload_large(
+      localFilePath,
+      {
+        resource_type: type, // Use the explicit type passed from controller
+        chunk_size: 6000000, // 6MB chunks
+        timeout: 7200000, // 2 hours timeout
+      },
+      (error, result) => {
+        const cleanup = () => {
+          try {
+            if (fs.existsSync(localFilePath)) {
+              fs.unlinkSync(localFilePath);
+            }
+          } catch (e) {
+            console.error('Error deleting temp file:', e.message);
+          }
+        };
+
+        if (error) {
+          console.error('Cloudinary Upload Failed Error:', error.message);
+          cleanup();
+          resolve(null);
+        } else {
+          console.log('Cloudinary Upload Success:', result.secure_url);
+          cleanup();
+          resolve(result);
+        }
+      }
+    );
+  });
+};
+
+const deleteFromCloudinary = async (publicId, resourceType = 'image') => {
+  try {
+    if (!publicId) return null;
+    await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType,
+    });
+  } catch (error) {
+    console.error('Cloudinary Delete Error:', error);
   }
 };
 
-export { uploadOnCloudinary };
+export { uploadOnCloudinary, deleteFromCloudinary };

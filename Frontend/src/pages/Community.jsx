@@ -115,7 +115,7 @@ const Community = () => {
       setLoading(true);
       try {
         const params = {
-          limit: 12, //
+          limit: 100, //
           page: page,
           search: debouncedSearch,
         };

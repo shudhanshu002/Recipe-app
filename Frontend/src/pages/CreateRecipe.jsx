@@ -123,7 +123,20 @@ const CreateRecipe = () => {
   // --- Video Handlers ---
   const handleVideoChange = (e) => {
     const file = e.target.files[0];
+    console.log('>>> Frontend: Video File Selected:', file);
+
     if (file) {
+      // FIX: Increased limit to 5GB (5 * 1024 * 1024 * 1024)
+      const MAX_SIZE = 5 * 1024 * 1024 * 1024;
+      if (file.size > MAX_SIZE) {
+        return toast.error('Video file is too large! (Max 5GB)');
+      }
+      console.log(
+        '>>> Frontend: Setting Video State. Name:',
+        file.name,
+        'Size:',
+        file.size
+      );
       setVideo(file);
       setVideoPreview(URL.createObjectURL(file));
     }
@@ -140,13 +153,19 @@ const CreateRecipe = () => {
   // --- Submit Handler ---
   const onSubmit = async (data) => {
     setIsLoading(true);
+    console.log('>>> Frontend: Submit Initiated');
     try {
+      const validIngredients = ingredients.filter((i) => i.trim() !== '');
+      if (validIngredients.length === 0) {
+        toast.error('Please add at least one ingredient.');
+        setIsLoading(false);
+        return;
+      }
+
       const formData = new FormData();
 
       formData.append('title', data.title);
       formData.append('description', data.description);
-
-      // Instructions from RichTextEditor
       formData.append('instructions', data.instructions || '');
       formData.append('difficulty', data.difficulty);
       formData.append('mainIngredient', data.mainIngredient);
@@ -155,11 +174,10 @@ const CreateRecipe = () => {
       formData.append('isVegetarian', isVegetarian);
       formData.append('calories', data.calories);
 
-      // Custom Cuisine Logic
       let finalCuisine = data.cuisine;
       if (finalCuisine === 'Other') {
         if (!data.customCuisine || data.customCuisine.trim() === '') {
-          toast.arguments('Please type the name of the cuisine.');
+          toast.error('Please type the name of the cuisine.');
           setIsLoading(false);
           return;
         }
@@ -167,19 +185,24 @@ const CreateRecipe = () => {
       }
       formData.append('cuisine', finalCuisine);
 
-      // Arrays
-      ingredients.forEach((ing) => {
-        if (ing.trim()) formData.append('ingredients', ing);
+      validIngredients.forEach((ing) => {
+        formData.append('ingredients', ing);
       });
 
       images.forEach((image) => formData.append('images', image));
 
-      if (video) formData.append('video', video);
+      if (video) {
+        console.log('>>> Frontend: Appending Video to FormData:', video.name);
+        formData.append('video', video);
+      }
+
       if (videoThumbnail) formData.append('videoThumbnail', videoThumbnail);
 
       await recipeApi.create(formData);
+      toast.success('Recipe published successfully!');
       navigate('/');
     } catch (error) {
+      console.error('>>> Frontend: Submit Error:', error);
       toast.error('Failed to create recipe. Check console.');
     } finally {
       setIsLoading(false);
@@ -207,7 +230,6 @@ const CreateRecipe = () => {
         onSubmit={handleSubmit(onSubmit)}
         className={`space-y-8 p-8 rounded-xl shadow-sm border ${cardBg}`}
       >
-        {/* Title & Main Ingredient */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
             label="Recipe Title"
@@ -252,9 +274,7 @@ const CreateRecipe = () => {
           </div>
         </div>
 
-        {/* Meta Data */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Replaced native Cuisine Select with FilterDropdown */}
           <div className="flex flex-col gap-1">
             <label className={`text-sm font-medium ${labelColor}`}>
               Cuisine
@@ -271,7 +291,6 @@ const CreateRecipe = () => {
             />
           </div>
 
-          {/* Replaced native Difficulty Select with FilterDropdown */}
           <div className="flex flex-col gap-1">
             <label className={`text-sm font-medium ${labelColor}`}>
               Difficulty
@@ -292,7 +311,6 @@ const CreateRecipe = () => {
             type="number"
             {...register('cookingTime')}
           />
-          {/* CALORIES INPUT */}
           <Input
             label="Calories (kcal)"
             type="number"
@@ -301,7 +319,6 @@ const CreateRecipe = () => {
           />
         </div>
 
-        {/* Custom Cuisine Input */}
         {selectedCuisine === 'Other' && (
           <div className="animate-in fade-in slide-in-from-top-2">
             <Input
@@ -314,7 +331,6 @@ const CreateRecipe = () => {
           </div>
         )}
 
-        {/* Description */}
         <div className="flex flex-col gap-1">
           <label className={`text-sm font-medium ${labelColor}`}>
             Description
@@ -326,7 +342,6 @@ const CreateRecipe = () => {
           />
         </div>
 
-        {/* Ingredients List */}
         <div>
           <label className={`text-sm font-medium mb-2 block ${labelColor}`}>
             Ingredients
@@ -358,19 +373,16 @@ const CreateRecipe = () => {
           </div>
         </div>
 
-        {/* INSTRUCTIONS (RICH TEXT EDITOR) */}
         <div>
           <label className={`text-sm font-medium mb-2 block ${labelColor}`}>
             Instructions
           </label>
-          {/* Use Controller logic via manual onChange to hook into react-hook-form */}
           <RichTextEditor
             content={watch('instructions')}
             onChange={(html) => setValue('instructions', html)}
           />
         </div>
 
-        {/* Image Upload */}
         <div>
           <label className={`text-sm font-medium mb-2 block ${labelColor}`}>
             Images
@@ -413,7 +425,6 @@ const CreateRecipe = () => {
           </div>
         </div>
 
-        {/* Video Upload */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className={`text-sm font-medium mb-2 block ${labelColor}`}>
@@ -459,7 +470,6 @@ const CreateRecipe = () => {
             </div>
           </div>
 
-          {/* Video Thumbnail Upload (Only if video exists) */}
           {video && (
             <div className="animate-in fade-in">
               <label className={`text-sm font-medium mb-2 block ${labelColor}`}>

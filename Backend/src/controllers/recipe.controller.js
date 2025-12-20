@@ -9,6 +9,86 @@ import { uploadOnCloudinary } from '../utils/cloudinary.js';
 import { User } from '../models/user.model.js';
 
 // 1. CREATE RECIPE
+// const createRecipe = asyncHandler(async (req, res) => {
+//   const {
+//     title,
+//     description,
+//     ingredients,
+//     instructions,
+//     difficulty,
+//     cuisine,
+//     mainIngredient,
+//     isPremium,
+//     isVegetarian,
+//     dietaryTags,
+//     cookingTime,
+//     calories,
+//   } = req.body;
+
+//   if (
+//     [title, description, instructions, difficulty, cuisine].some(
+//       (field) => field?.trim() === ''
+//     )
+//   ) {
+//     throw new ApiError(400, 'All fields are required');
+//   }
+
+//   const imageFiles = req.files?.images;
+//   if (!imageFiles || imageFiles.length === 0) {
+//     throw new ApiError(400, 'At least one recipe image is required');
+//   }
+
+//   const imagesLocalPaths = imageFiles.map((file) => file.path);
+//   const uploadPromises = imagesLocalPaths.map((path) =>
+//     uploadOnCloudinary(path)
+//   );
+//   const imageResponses = await Promise.all(uploadPromises);
+//   const imageUrls = imageResponses
+//     .filter((img) => img !== null)
+//     .map((img) => img.url);
+
+//   let videoUrl = '';
+//   if (req.files?.video?.[0]) {
+//     const videoResponse = await uploadOnCloudinary(req.files.video[0].path);
+//     if (videoResponse) videoUrl = videoResponse.secure_url;
+//   }
+
+//   let videoThumbnail = '';
+//   if (req.files?.videoThumbnail?.[0]) {
+//     const thumbResponse = await uploadOnCloudinary(
+//       req.files.videoThumbnail[0].path
+//     );
+//     if (thumbResponse) videoThumbnail = thumbResponse.url;
+//   }
+
+//   const ingredientsArray = Array.isArray(ingredients)
+//     ? ingredients
+//     : ingredients.split(',');
+
+//   const recipe = await Recipe.create({
+//     title,
+//     description,
+//     ingredients: ingredientsArray,
+//     mainIngredient,
+//     instructions,
+//     difficulty,
+//     cuisine,
+//     videoThumbnail,
+//     isPremium: isPremium === 'true',
+//     images: imageUrls,
+//     isVegetarian: isVegetarian === 'true',
+//     videoUrl,
+//     createdBy: req.user._id,
+//     dietaryTags: dietaryTags ? dietaryTags.split(',') : [],
+//     cookingTime: parseInt(cookingTime) || 30,
+//     calories: parseInt(calories) || 0,
+//     viewedBy: [],
+//     views: 0,
+//   });
+
+//   return res.status(201).json(new ApiResponse(201, recipe, 'Recipe created'));
+// });
+// 1. CREATE RECIPE
 const createRecipe = asyncHandler(async (req, res) => {
   const {
     title,
@@ -40,7 +120,7 @@ const createRecipe = asyncHandler(async (req, res) => {
 
   const imagesLocalPaths = imageFiles.map((file) => file.path);
   const uploadPromises = imagesLocalPaths.map((path) =>
-    uploadOnCloudinary(path)
+    uploadOnCloudinary(path, 'image')
   );
   const imageResponses = await Promise.all(uploadPromises);
   const imageUrls = imageResponses
@@ -48,20 +128,28 @@ const createRecipe = asyncHandler(async (req, res) => {
     .map((img) => img.url);
 
   let videoUrl = '';
-  if (req.files?.video?.[0]) {
-    const videoResponse = await uploadOnCloudinary(req.files.video[0].path);
-    if (videoResponse) videoUrl = videoResponse.url;
+  const videoFile = req.files?.video?.[0];
+
+  if (videoFile) {
+    const videoResponse = await uploadOnCloudinary(videoFile.path, 'video');
+
+    if (videoResponse && videoResponse.secure_url) {
+      videoUrl = videoResponse.secure_url;
+      console.log('>>> Backend: Video URL set to:', videoUrl);
+    } else {
+      console.error('>>> Backend: Video upload failed.');
+      throw new ApiError(500, 'Failed to upload video file.');
+    }
   }
 
+  // --- THUMBNAIL UPLOAD ---
   let videoThumbnail = '';
   if (req.files?.videoThumbnail?.[0]) {
     const thumbResponse = await uploadOnCloudinary(
-      req.files.videoThumbnail[0].path
+      req.files.videoThumbnail[0].path,
+      'image'
     );
     if (thumbResponse) videoThumbnail = thumbResponse.url;
-  } else if (videoUrl) {
-    // If no thumbnail provided but video exists, use first image as fallback or Cloudinary auto-thumbnail
-    // Here we just default to empty string, frontend will handle fallback to recipe image[0]
   }
 
   const ingredientsArray = Array.isArray(ingredients)
@@ -237,7 +325,7 @@ const getAllRecipes = asyncHandler(async (req, res) => {
     .sort(sortOptions)
     .skip(skip)
     .limit(limit)
-    .select('-instructions -videoUrl')
+    .select('-instructions')
     .populate('createdBy', 'username avatar')
     .lean();
 
