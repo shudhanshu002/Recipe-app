@@ -193,9 +193,9 @@ const Navbar = () => {
               <Bell size={20} />
               {unreadCount > 0 && (
                 <span
-                  className={`absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full  text-[10px] font-bold  ring-2${
+                  className={`absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full  text-[10px] font-bold  ring-2 ${
                     isDarkMode
-                      ? 'ring-[#1e1e1e]'
+                      ? 'ring-[#1e1e1e] bg-red-500 text-white'
                       : 'bg-red-500 text-white ring-white'
                   }`}
                 >
@@ -228,7 +228,7 @@ const Navbar = () => {
                   />
                   {user.isPremium && (
                     <div
-                      className={`absolute -top-1 -right-1  rounded-full p-0.5 border-2 ${isDarkMode ? 'border-[#1e1e1e]' : 'bg-yellow-400 border-white'}`}
+                      className={`absolute -top-1 -right-1  rounded-full p-0.5 border-2 ${isDarkMode ? 'border-[#1e1e1e] bg-yellow-400' : 'bg-yellow-400 border-white'}`}
                     >
                       <Crown size={8} className="text-white fill-white" />
                     </div>
