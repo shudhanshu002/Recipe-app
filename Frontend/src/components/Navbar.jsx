@@ -89,14 +89,24 @@ const Navbar = () => {
   }, [user, fetchUnreadCount]);
 
   // logout
+  // const handleLogout = async () => {
+  //   try {
+  //     await authApi.logout();
+  //     logout();
+  //     navigate('/login');
+  //   } catch (error) {
+  //     console.error('Logout failed', error);
+  //   }
+  // };
   const handleLogout = async () => {
-    try {
-      await authApi.logout();
-      logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout failed', error);
-    }
+    // 1. Perform Logout (Clear State + Call API)
+    await logout();
+
+    // 2. FORCE Redirect (Critical for Production)
+    // 'replace: true' prevents the user from clicking 'Back' to return to the app
+    navigate('/login', { replace: true });
+
+    toast.info('Logged out successfully');
   };
 
   // profile -drop down menu
