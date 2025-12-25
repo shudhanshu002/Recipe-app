@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
 import { getOtpTemplate } from '../utils/getOTPTemplate.js';
 import mongoose, { isValidObjectId } from 'mongoose';
+import crypto from 'crypto';
 
 // 1. generating tokens
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -45,8 +46,6 @@ const handleSocialLogin = asyncHandler(async (req, res) => {
     secure: true,
     sameSite: 'None',
   };
-
-  const clientURL = process.env.CLIENT_URL;
 
   return res
     .status(200)
@@ -503,6 +502,91 @@ const getUserChannelProfileById = asyncHandler(async (req, res) => {
     );
 });
 
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    // For security, you might want to return success even if user doesn't exist
+    // to prevent email enumeration, but here we throw error for simplicity.
+    throw new ApiError(404, 'User not found');
+  }
+
+  // Generate token via Model method
+  const resetToken = user.generateForgotPasswordToken();
+  await user.save({ validateBeforeSave: false });
+
+  // Construct Reset URL (Frontend URL)
+  // Example: http://localhost:5173/reset-password/24234234234234
+  const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+  const message = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+            <h2 style="color: #f97316;">Reset Your Password</h2>
+            <p>You requested a password reset for your Zaika Vault account.</p>
+            <p>Please click the link below to reset your password:</p>
+            <a href="${resetUrl}" style="background-color: #f97316; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Reset Password</a>
+            <p>This link is valid for 20 minutes.</p>
+            <p style="font-size: 12px; color: #666;">If you did not request this, please ignore this email.</p>
+        </div>
+    `;
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Zaika Vault - Password Reset Request',
+      message: `Click here to reset your password: ${resetUrl}`, // Plain text fallback
+      html: message,
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, 'Password reset email sent successfully'));
+  } catch (error) {
+    // If email fails, clear the token so the user can try again cleanly
+    user.forgotPasswordToken = undefined;
+    user.forgotPasswordExpiry = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    throw new ApiError(500, 'Email sending failed. Please try again later.');
+  }
+});
+
+// 15. Reset Password
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  if (!password) {
+    throw new ApiError(400, 'New password is required');
+  }
+
+  // Hash the token from the URL to compare with the one in DB
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await User.findOne({
+    forgotPasswordToken: hashedToken,
+    forgotPasswordExpiry: { $gt: Date.now() }, // Check if expiry is in the future
+  });
+
+  if (!user) {
+    throw new ApiError(400, 'Password reset token is invalid or has expired');
+  }
+
+  // Update password
+  user.password = password;
+
+  // Clear reset fields
+  user.forgotPasswordToken = undefined;
+  user.forgotPasswordExpiry = undefined;
+
+  await user.save(); // Will run pre('save') middleware to hash password
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, 'Password reset successfully'));
+});
+
 export {
   registerUser,
   loginUser,
@@ -516,4 +600,6 @@ export {
   getTopChefs,
   getCurrentUser,
   getUserChannelProfileById,
+  forgotPassword,
+  resetPassword
 };

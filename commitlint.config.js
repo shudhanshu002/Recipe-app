@@ -1,11 +1,8 @@
 export default {
   extends: ['@commitlint/config-conventional'],
   rules: {
-    // Level [0..2]: 0=disable, 1=warning, 2=error
-    // Always applicable
-    // Value
 
-    // Ensure type is lower case (feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert)
+
     'type-enum': [
       2,
       'always',
@@ -23,11 +20,8 @@ export default {
         'revert', // Revert a previous commit
       ],
     ],
-    // Subject must not be empty
     'subject-empty': [2, 'never'],
-    // Subject must not end with period
     'subject-full-stop': [2, 'never', '.'],
-    // Type must be lower case
     'type-case': [2, 'always', 'lower-case'],
   },
 };

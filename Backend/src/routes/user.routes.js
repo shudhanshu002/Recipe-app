@@ -12,6 +12,8 @@ import {
   updateUserCoverImage,
   getTopChefs,
   getUserChannelProfileById,
+  forgotPassword,
+  resetPassword,
 } from '../controllers/user.controller.js';
 import { optionalAuth, verifyJWT } from '../middlewares/auth.middleware.js';
 import { upload } from '../middlewares/multer.middleware.js';
@@ -38,6 +40,9 @@ router.route('/verify-otp').post(verifyUserOtp);
 router.route('/login').post(loginUser);
 router.route('/refresh-token').post(refreshAccessToken);
 router.route('/community').get(getTopChefs);
+
+router.route('/forgot-password').post(forgotPassword);
+router.route('/reset-password/:token').post(resetPassword);
 
 //secure route
 router.route('/logout').post(verifyJWT, logoutUser);

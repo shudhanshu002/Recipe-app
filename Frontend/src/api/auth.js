@@ -54,4 +54,24 @@ export const authApi = {
       return handleErrorResponse(error);
     }
   },
+
+  forgotPassword: async (email) => {
+    try {
+      const response = await api.post('/users/forgot-password', { email });
+      return handleSuccessResponse(response);
+    } catch (error) {
+      return handleErrorResponse(error);
+    }
+  },
+
+  resetPassword: async (token, password) => {
+    try {
+      const response = await api.post(`/users/reset-password/${token}`, {
+        password,
+      });
+      return handleSuccessResponse(response);
+    } catch (error) {
+      return handleErrorResponse(error);
+    }
+  },
 };

@@ -97,23 +97,34 @@ const Login = () => {
             error={errors.email}
             {...register('email')}
           />
-          <div className="relative">
-            <Input
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="••••••••"
-              error={errors.password}
-              {...register('password')}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              // Adjust 'top' if the icon isn't aligned with your input field perfectly
-              className="absolute right-3 top-[38px] text-gray-400 hover:text-[#f97316] transition-colors focus:outline-none"
-              tabIndex={-1}
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
+          <div>
+            <div className="relative">
+              <Input
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                error={errors.password}
+                {...register('password')}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                // Adjust 'top' if the icon isn't aligned with your input field perfectly
+                className="absolute right-3 top-[38px] text-gray-400 hover:text-[#f97316] transition-colors focus:outline-none"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+
+            <div className="flex justify-end mt-2">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-[#f97316] hover:text-[#ea580c] font-medium transition-colors"
+              >
+                Forgot Password?
+              </Link>
+            </div>
           </div>
 
           <button

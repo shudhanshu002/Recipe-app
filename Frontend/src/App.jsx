@@ -33,6 +33,8 @@ import Community from './pages/Community';
 import PaymentSuccess from './pages/PaymentSuccess';
 import RecipeFeed from './pages/RecipeFeed';
 import ChefSpotlight from './pages/ChefSpotlight';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuthStore();
@@ -239,6 +241,19 @@ function App() {
         <Route
           path="/register"
           element={isAuthenticated ? <Navigate to="/" replace /> : <Register />}
+        />
+
+        <Route
+          path="/forgot-password"
+          element={
+            isAuthenticated ? <Navigate to="/" replace /> : <ForgotPassword />
+          }
+        />
+        <Route
+          path="/reset-password/:token"
+          element={
+            isAuthenticated ? <Navigate to="/" replace /> : <ResetPassword />
+          }
         />
 
         {/* Fallback */}

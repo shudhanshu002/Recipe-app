@@ -11,7 +11,8 @@ import { errorHandler } from './middlewares/error.middleware.js';
 const app = express();
 
 const allowedOrigins = [
-  'http://localhost:5173', // Local Development
+  'http://localhost:3000', // Local Development
+  'http://localhost:5173',
   process.env.CLIENT_URL, // Main Production URL (set in Render)
 ];
 

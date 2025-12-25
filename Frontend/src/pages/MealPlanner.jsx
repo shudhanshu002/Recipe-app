@@ -25,10 +25,10 @@ const MealPlanner = () => {
   const [weeklyPlan, setWeeklyPlan] = useState([]);
   const [historyPlan, setHistoryPlan] = useState([]);
   const [allMealsForStrip, setAllMealsForStrip] = useState([]);
-  
+
   // Start with loading true only on mount
   const [loading, setLoading] = useState(true);
-  
+
   // Initialize current date
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -50,7 +50,7 @@ const MealPlanner = () => {
   // MEMOIZE weekDates so it doesn't change on every render
   // This calculates the 7 days based on the current 'currentDate'
   const weekStart = useMemo(() => getStartOfWeek(currentDate), [currentDate]);
-  
+
   const weekDates = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(weekStart);
@@ -66,7 +66,7 @@ const MealPlanner = () => {
     try {
       // Don't set loading true here to avoid full page flicker on minor updates
       // We only set it true when changing weeks (handled in useEffect)
-      
+
       const startStr = weekDates[0].toISOString();
       const endStr = weekDates[6].toISOString();
 
@@ -87,7 +87,7 @@ const MealPlanner = () => {
       setAllMealsForStrip(combined);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to load meal plan");
+      toast.error('Failed to load meal plan');
     } finally {
       setLoading(false);
     }
@@ -109,12 +109,12 @@ const MealPlanner = () => {
   useEffect(() => {
     if (view === 'week') {
       // Only show full loader if we don't have data yet or switched weeks
-      if (weeklyPlan.length === 0) setLoading(true); 
+      if (weeklyPlan.length === 0) setLoading(true);
       fetchPlan();
     } else {
       fetchHistory();
     }
-  }, [view, weekIdentifier, fetchPlan]); 
+  }, [view, weekIdentifier, fetchPlan]);
   // ^ Removed 'currentDate' from deps. 'weekIdentifier' handles the week change logic.
 
   // Search Effect
@@ -137,7 +137,7 @@ const MealPlanner = () => {
   const handleStripDateClick = (date) => {
     setCurrentDate(new Date(date));
     setView('week');
-    // No need to fetchPlan here, the date change will update 'currentDate', 
+    // No need to fetchPlan here, the date change will update 'currentDate',
     // but unless the week changes, we just update the UI highlight.
   };
 
@@ -162,7 +162,7 @@ const MealPlanner = () => {
 
   const handleDelete = async (planId, isHistory = false) => {
     if (!confirm('Remove this meal?')) return;
-    
+
     // Optimistic update: Remove from UI immediately
     const filterFn = (item) => item._id !== planId;
     setWeeklyPlan((prev) => prev.filter(filterFn));
@@ -171,7 +171,7 @@ const MealPlanner = () => {
 
     try {
       await api.delete(`/mealplanner/${planId}`);
-      toast.success("Meal removed");
+      toast.success('Meal removed');
     } catch (error) {
       toast.error('Failed to delete');
       // Re-fetch if failed to ensure sync
@@ -196,7 +196,7 @@ const MealPlanner = () => {
       await fetchPlan(); // Refresh data quietly
       setShowModal(false);
       setSearchQuery('');
-      toast.success("Meal added successfully");
+      toast.success('Meal added successfully');
     } catch (error) {
       console.error(error);
       toast.error('Failed to add meal');
@@ -232,8 +232,11 @@ const MealPlanner = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 mb-20 font-dancing">
-      <ToastContainer position="bottom-right" theme={isDarkMode ? "dark" : "light"} />
-      
+      <ToastContainer
+        position="bottom-right"
+        theme={isDarkMode ? 'dark' : 'light'}
+      />
+
       {/* Header Section */}
       <div className="flex flex-col xl:flex-row justify-between items-center gap-6">
         <div className="shrink-0 text-center md:text-left">
