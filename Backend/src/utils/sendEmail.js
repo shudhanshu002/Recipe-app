@@ -3,53 +3,37 @@ import nodemailer from 'nodemailer';
 const sendEmail = async (options) => {
   try {
     const emailHost = process.env.EMAIL_HOST || 'smtp.sendgrid.net';
-    const emailPort = Number(process.env.EMAIL_PORT) || 587;
+    // FIX: Default to 2525 as it works best in Cloud environments (bypasses 587 blocks)
+    const emailPort = Number(process.env.EMAIL_PORT) || 2525;
     const emailUser = process.env.EMAIL_USER;
     const emailPass = process.env.EMAIL_PASS;
     const emailFrom = process.env.EMAIL_FROM;
 
-    // 1. Critical Debugging: Check if Env Vars are actually loaded in Production
-    console.log(`[Email Debug] ------------- Configuration -------------`);
     console.log(`[Email Debug] Host: ${emailHost}`);
     console.log(`[Email Debug] Port: ${emailPort}`);
-    // Hide actual credentials in logs, just check existence
-    console.log(
-      `[Email Debug] User: ${emailUser ? "Loaded (Check if it is 'apikey')" : 'MISSING!'}`
-    );
-    console.log(`[Email Debug] Pass: ${emailPass ? 'Loaded' : 'MISSING!'}`);
-    console.log(`[Email Debug] From: ${emailFrom ? emailFrom : 'MISSING!'}`);
-    console.log(`[Email Debug] ---------------------------------------`);
-
-    if (!emailUser || !emailPass || !emailFrom) {
-      throw new Error(
-        'Missing required Email Environment Variables on Server.'
-      );
-    }
 
     const transporter = nodemailer.createTransport({
       host: emailHost,
       port: emailPort,
-      secure: emailPort === 465, // True for 465, false for other ports
+      secure: false, // Must be false for ports 2525 and 587
       auth: {
         user: emailUser,
         pass: emailPass,
       },
-      // FIX: Relax TLS constraints for cloud environments (Render/AWS) to prevent handshake failures
       tls: {
+        // Fix for handshake failures in some cloud environments
         rejectUnauthorized: false,
         ciphers: 'SSLv3',
       },
+      // FIX: Add timeouts to prevent the server from hanging indefinitely
+      connectionTimeout: 10000, // 10 seconds to connect
+      greetingTimeout: 10000, // 10 seconds to wait for greeting
+      socketTimeout: 10000, // 10 seconds for socket inactivity
     });
 
-    // 2. Verify Connection before sending
-    try {
-      await transporter.verify();
-      console.log('[Email Debug] SMTP Connection Verified ✅');
-    } catch (connError) {
-      console.error('[Email Debug] SMTP Connection Failed ❌');
-      console.error(connError);
-      throw new Error('Could not connect to SendGrid. Check API Key or Port.');
-    }
+    // Verify connection before attempting to send
+    await transporter.verify();
+    console.log('[Email Debug] SMTP Connection Verified ✅');
 
     const mailOptions = {
       from: emailFrom,
@@ -60,9 +44,14 @@ const sendEmail = async (options) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('[Email Debug] Email Sent Successfully. ID:', info.messageId);
+    console.log('[Email Debug] Sent. ID:', info.messageId);
   } catch (error) {
     console.error('[Email Debug] FATAL ERROR:', error.message);
+    if (error.code === 'ETIMEDOUT') {
+      console.error(
+        'TIP: Your cloud provider might be blocking this port. Ensure EMAIL_PORT is set to 2525.'
+      );
+    }
     throw new Error(error.message);
   }
 };
