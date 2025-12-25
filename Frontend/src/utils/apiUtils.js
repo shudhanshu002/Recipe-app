@@ -11,7 +11,7 @@ export class ApiError extends Error {
 
 // success reponse handler
 export const handleSuccessResponse = (response) => {
-  return response?.data;
+  return response?.data?.data || response?.data;
 };
 
 // error response handler
