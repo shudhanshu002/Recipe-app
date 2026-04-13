@@ -144,6 +144,7 @@ Note: If you try to commit messy code, Husky will block you until errors are fix
 
 📂 Project Structure
 
+```
 zaika-vault/
 ├── Backend/ # Node.js API
 │ ├── src/
@@ -166,6 +167,7 @@ zaika-vault/
 ├── eslint.config.js # Global Lint rules
 ├── package.json # Root scripts
 └── README.md # Documentation
+```
 
 🤝 Contributing
 
