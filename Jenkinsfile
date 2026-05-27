@@ -54,18 +54,6 @@ pipeline {
                 bat 'docker-compose up -d --build'
             }
         }
-        
-        // stage('SonarQube Analysis') {
-        //     environment {
-        //         // Requires 'SonarQube Scanner' configured in Jenkins
-        //         scannerHome = tool 'SonarQubeScanner'
-        //     }
-        //     steps {
-        //         withSonarQubeEnv('My SonarQube Server') {
-        //             sh "${scannerHome}/bin/sonar-scanner"
-        //         }
-        //     }
-        // }
     }
 
     post {

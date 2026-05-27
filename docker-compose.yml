@@ -4,18 +4,22 @@ services:
     build: ./Backend
     ports:
       - "5000:5000"
+    env_file:
+      - path: ./Backend/.env
+        required: false
     environment:
       - PORT=5000
-      # Using your Cloud Database
-      - MONGO_URI=mongodb+srv://sudhanshu6073:Sudhanshu002@cluster0.haxwwwx.mongodb.net/recipe_db
-      # FIXED: Allow the Docker Frontend (localhost:3000) to access the API
+      - CLIENT_URL=http://localhost:3000
       - CORS_ORIGIN=http://localhost:3000
     depends_on:
       - mongo
 
   # Frontend Service
   frontend:
-    build: ./Frontend
+    build:
+      context: ./Frontend
+      args:
+        VITE_API_URL: /api/v1
     ports:
       - "3000:80"
     depends_on:
