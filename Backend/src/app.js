@@ -3,6 +3,8 @@ import cors from 'cors';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import passport from 'passport';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import './config/passport.js';
 
 import rootRouter from './routes/index.js';
@@ -44,9 +46,19 @@ app.use(
   })
 );
 
-//middlewares
-app.use(express.json({ limit: '5gb' }));
-app.use(express.urlencoded({ extended: true, limit: '5gb' }));
+// Security Middlewares
+app.use(helmet()); // Secure HTTP headers
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // limit each IP to 1000 requests per windowMs
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use('/api/', limiter); // Apply rate limiting to API routes
+
+// middlewares
+app.use(express.json({ limit: '50mb' })); // Changed from 5gb to prevent memory exhaustion
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static('public'));
 
 app.use(morgan('dev'));

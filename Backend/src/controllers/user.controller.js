@@ -601,5 +601,5 @@ export {
   getCurrentUser,
   getUserChannelProfileById,
   forgotPassword,
-  resetPassword
+  resetPassword,
 };

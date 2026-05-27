@@ -91,7 +91,7 @@ const MealPlanner = () => {
     } finally {
       setLoading(false);
     }
-  }, [weekIdentifier, weekDates]); // Only re-create if the WEEK changes
+  }, [ weekDates]); // Only re-create if the WEEK changes
 
   const fetchHistory = useCallback(async () => {
     setLoading(true);
@@ -114,7 +114,7 @@ const MealPlanner = () => {
     } else {
       fetchHistory();
     }
-  }, [view, weekIdentifier, fetchPlan]);
+  }, [view, weekIdentifier, fetchPlan, fetchHistory, weeklyPlan.length]);
   // ^ Removed 'currentDate' from deps. 'weekIdentifier' handles the week change logic.
 
   // Search Effect
