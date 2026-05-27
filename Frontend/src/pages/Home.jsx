@@ -407,7 +407,7 @@ const Home = () => {
         <h1
           className={`text-4xl md:text-6xl font-black ${textColor} tracking-tight leading-tight`}
         >
-          Taste- the{' '}
+          Taste the{' '}
           <span
             className={`font-recur ${isDarkMode ? 'text-gray-400' : 'text-blue-900'} `}
           >

@@ -214,7 +214,7 @@ const Community = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className={`text-2xl font-bold ${textColor}`}>
-                Community sudhanshu Recipes
+                Community Recipes
               </h1>
               <p className={`text-xs ${subText}`}>
                 Discover what others are cooking
