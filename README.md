@@ -2,6 +2,7 @@
 
 Zaika Vault is a comprehensive, AI-powered culinary platform that combines social recipe sharing with advanced meal planning and nutrition tools.
 
+
 🚀 Features
 
 🤖 AI Chef Assistant: Personalized recipe recommendations and an AI Chatbot for culinary queries.
