@@ -51,7 +51,7 @@ pipeline {
         stage('Docker Build') {
             steps {
                 echo 'Building Docker images using docker-compose...'
-                bat 'docker-compose build'
+                bat 'docker-compose up -d --build'
             }
         }
         
