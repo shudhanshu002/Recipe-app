@@ -15,43 +15,43 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo 'Installing dependencies for root, backend, and frontend...'
-                sh 'npm run install-all'
+                bat 'npm run install-all'
             }
         }
         
         stage('Security Audit') {
             steps {
                 echo 'Running npm audit to check for vulnerabilities...'
-                sh 'cd Backend && npm audit --audit-level=high || true'
-                sh 'cd Frontend && npm audit --audit-level=high || true'
+                bat 'cd Backend && npm audit --audit-level=high || exit 0'
+                bat 'cd Frontend && npm audit --audit-level=high || exit 0'
             }
         }
 
         stage('Lint Code') {
             steps {
                 echo 'Running linting...'
-                sh 'npm run lint-all'
+                bat 'npm run lint-all'
             }
         }
 
         stage('Test Code') {
             steps {
                 echo 'Running tests...'
-                sh 'npm run test-all'
+                bat 'npm run test-all'
             }
         }
 
         stage('Build Frontend') {
             steps {
                 echo 'Building frontend...'
-                sh 'npm run build-all'
+                bat 'npm run build-all'
             }
         }
         
         stage('Docker Build') {
             steps {
                 echo 'Building Docker images using docker-compose...'
-                sh 'docker-compose build'
+                bat 'docker-compose build'
             }
         }
         
